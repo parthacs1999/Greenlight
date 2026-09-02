@@ -1,0 +1,4 @@
+typer
+rich
+google-genai
+python-dotenv
