@@ -16,6 +16,7 @@ The venv is at `.venv/` (Python 3.13; the package supports 3.10+).
 .venv/bin/python -m pytest tests/test_tools.py::test_edit_file_replaces_unique_match
 .venv/bin/ruff check . && .venv/bin/ruff format --check .        # CI runs both
 .venv/bin/greenlight fix <repo> -p gemini -t "<abs path>/python -m pytest -q"
+.venv/bin/greenlight ui                                          # web UI on 127.0.0.1:8501
 .venv/bin/python evals/run_eval.py --provider claude             # spends the user's API credits
 ```
 
@@ -29,6 +30,7 @@ Pass the test command with an absolute interpreter path. It runs with `cwd` set 
   - Gemini: `automatic_function_calling` is disabled on purpose; SDK retries are set through `HttpRetryOptions`.
 - `tools.py`: `Workspace` binds the tools to one repo. Each tool is a `Tool(name, description, JSON-schema parameters, handler)`, and both providers' tool schemas are generated from that list. Handlers raise `ToolError`, which `execute()` turns into `(message, is_error=True)` for the model. There is deliberately no shell tool; `run_tests` only runs the user's command plus an optional validated path target.
 - `security.py`: every path goes through `resolve_in_workspace` (confinement, `.git`, secret files). Subprocesses get `scrubbed_env()`. Every tool output, trace and summary goes through `redact()`.
+- `streamlit_app.py`: the web UI (`greenlight ui`, or `streamlit run streamlit_app.py` from the repo root, which is the Streamlit Cloud entry point). The UI **never** reads keys from env or the keychain: users always paste their own, and `run_agent` calls `forget_secret` when the run ends. **Hosted mode is the default.** Only `GREENLIGHT_LOCAL=1` (set by `greenlight ui`) enables local folders and a custom test command. Repo- or model-derived values must go through `esc()` before `st.html`, or use `st.text`/`st.code`. Never pass them to `st.markdown`. Tested headlessly in `tests/test_ui.py` with `AppTest`.
 - `keys.py`: BYOK. Keys come from env vars, then the OS keychain (`keyring`). Never add a CLI flag that takes a key.
 
 ## Conventions

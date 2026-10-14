@@ -29,6 +29,7 @@ MAX_OUTPUT_CHARS = 12_000
 MAX_LIST_ENTRIES = 400
 MAX_SEARCH_HITS = 100
 COMMAND_NOT_FOUND = 127
+MAX_TEST_FILE_BYTES = 50 * 1024 * 1024
 
 TEST_FILE_PATTERNS = ("test_*.py", "*_test.py", "conftest.py", "*.test.*", "*.spec.*")
 TEST_DIR_NAMES = frozenset({"tests", "test", "__tests__"})
@@ -75,6 +76,7 @@ class Workspace:
         deny_patterns: tuple[str, ...] = (),
         test_timeout: int = 300,
         approve: ApproveFn | None = None,
+        limit_resources: bool = False,
     ) -> None:
         self.root = root.resolve()
         if not self.root.is_dir():
@@ -87,6 +89,7 @@ class Workspace:
         self.deny_patterns = deny_patterns
         self.test_timeout = test_timeout
         self.approve = approve
+        self.limit_resources = limit_resources
         # Original contents of every file the agent changed (None = file was created).
         self.originals: dict[str, str | None] = {}
 
@@ -220,6 +223,7 @@ class Workspace:
                 capture_output=True,
                 text=True,
                 timeout=self.test_timeout,
+                preexec_fn=self._apply_limits if self.limit_resources else None,
             )
         except FileNotFoundError:
             return COMMAND_NOT_FOUND, f"Test command not found: {self.test_argv[0]}"
@@ -227,6 +231,14 @@ class Workspace:
             return 124, f"Tests timed out after {self.test_timeout}s"
         output = (proc.stdout + ("\n" + proc.stderr if proc.stderr else "")).strip()
         return proc.returncode, truncate(output or "(no output)")
+
+    def _apply_limits(self) -> None:  # pragma: no cover - runs in the child process
+        """Cap CPU time and file size for the test process (POSIX). Not a full sandbox."""
+        import resource
+
+        cpu = max(1, self.test_timeout)
+        resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_TEST_FILE_BYTES, MAX_TEST_FILE_BYTES))
 
     def _validate_test_target(self, target: str) -> str:
         """Allow `path` or `path::test_id`, inside the workspace; never extra flags."""

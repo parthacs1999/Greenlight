@@ -126,6 +126,12 @@ def register_secret(value: str | None) -> None:
         _known_secrets.add(value)
 
 
+def forget_secret(value: str | None) -> None:
+    """Drop a secret registered for one run, so a long-lived server doesn't retain it."""
+    if value:
+        _known_secrets.discard(value)
+
+
 def register_env_secrets() -> None:
     for name, value in os.environ.items():
         if _SENSITIVE_ENV_NAME.search(name) or name.startswith(_SENSITIVE_ENV_PREFIXES):

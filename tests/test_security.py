@@ -71,6 +71,12 @@ def test_redact_registered_secret():
     assert redact("token custom-secret-value-42 here") == "token [REDACTED] here"
 
 
+def test_forget_secret_stops_retaining_it():
+    security.register_secret("per-run-visitor-key-77")
+    security.forget_secret("per-run-visitor-key-77")
+    assert "per-run-visitor-key-77" not in security._known_secrets
+
+
 def test_redact_leaves_normal_text():
     text = "def add(a, b):\n    return a + b"
     assert redact(text) == text

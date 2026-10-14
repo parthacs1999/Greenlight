@@ -187,7 +187,8 @@ class Agent:
             else:
                 result.status = "not_fixed"
 
-        result.diff = self.ws.diff()
+        # Diff context lines come from the real files, which the model only saw redacted.
+        result.diff = redact(self.ws.diff())
         result.cost_usd = self._cost(result.usage)
         result.duration_s = time.monotonic() - self._t0
         return result

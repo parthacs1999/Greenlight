@@ -1,3 +1,5 @@
+import sys
+
 from greenlight.tools import Workspace, is_test_file, truncate
 
 from .conftest import PYTEST_CMD
@@ -131,3 +133,11 @@ def test_is_test_file():
 def test_truncate_keeps_tail():
     out = truncate("a" * 50 + "END", limit=10)
     assert out.endswith("END") and "truncated" in out
+
+
+def test_resource_limits_cap_file_size(repo):
+    script = "open('big.bin', 'wb').write(b'0' * 60 * 1024 * 1024)"
+    ws = Workspace(repo, f'{sys.executable} -c "{script}"', limit_resources=True)
+    code, _ = ws.run_test_command()
+    assert code != 0
+    assert (repo / "big.bin").stat().st_size <= 50 * 1024 * 1024

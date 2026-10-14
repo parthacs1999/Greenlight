@@ -102,3 +102,11 @@ def test_trace_records_events(workspace):
     kinds = [e["type"] for e in result.trace]
     assert kinds[0] == "initial_tests" and kinds[-1] == "final_tests"
     assert "tool_result" in kinds
+
+
+def test_final_diff_is_redacted(workspace, repo):
+    secret = "ghp_" + "y" * 36
+    (repo / "calc.py").write_text(f'TOKEN = "{secret}"\n\ndef add(a, b):\n    return a - b\n')
+    edit = call("edit_file", path="calc.py", old_str="a - b", new_str="a + b")
+    result = Agent(ScriptedProvider([turn(edit), turn(text="done")]), workspace).run()
+    assert "a + b" in result.diff and secret not in result.diff

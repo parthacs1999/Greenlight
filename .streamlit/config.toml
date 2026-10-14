@@ -1,0 +1,17 @@
+[theme]
+base = "light"
+primaryColor = "#16a34a"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f8fafc"
+textColor = "#0f172a"
+borderColor = "#e2e8f0"
+baseRadius = "medium"
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+# Never show tracebacks (server paths, raw exception text) to visitors.
+showErrorDetails = "none"
+showSidebarNavigation = false

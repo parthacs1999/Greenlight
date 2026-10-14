@@ -7,7 +7,9 @@
 - **Guardrails built in.** It never touches secret files, its tests run without your credentials, test files are read-only, and it stops at a hard step, token and cost budget.
 - **Measured.** It ships with an eval suite of buggy repositories and reports pass rate, cost and steps per model.
 
-> 📽️ *Demo GIF: record one with [vhs](https://github.com/charmbracelet/vhs) or asciinema and put it here.*
+![Greenlight fixing a real bug: it reads cart.py, traces the failure into pricing.py, makes a one-line fix, and verifies it with the test suite](docs/demo.gif)
+
+*A real, unedited run with `gemini-3.1-flash-lite`. The failing test is in `cart.py`, but the bug is in `pricing.py`. The agent follows the import, fixes the formula, and Greenlight re-runs the tests to confirm: **FIXED in 8 steps, 24 seconds**. Recorded with [vhs](https://github.com/charmbracelet/vhs) from [`docs/demo.tape`](docs/demo.tape).*
 
 ## Why
 
@@ -29,18 +31,33 @@ cp -r evals/tasks/cross_module_discount /tmp/demo
 greenlight fix /tmp/demo --test-cmd "python -m pytest -q"
 ```
 
-Useful options:
+### Web UI
+
+```bash
+pip install -e ".[ui]"
+greenlight ui            # opens http://127.0.0.1:8501
+```
+
+Pick a buggy demo repo (or, locally, any folder), choose Claude or Gemini, and watch the agent's tool calls stream live. You get the diff, the agent's summary, and a cost report at the end.
+
+The same app deploys to [Streamlit Community Cloud](https://streamlit.io/cloud) for free: point it at this repo with `streamlit_app.py` as the entry file.
+
+Everyone brings their own key, in every mode. The UI never reads keys from the server's environment or keychain. A pasted key is used for one run, is never written anywhere, is cleared from the session when the run starts, and is dropped from memory when the run ends. Hosted mode is the default and is locked down further: only the bundled demo projects can be run, each on a temporary copy, with a fixed test command. Your own folders are only available through `greenlight ui` on your machine.
+
+### CLI options
 
 | Option | Default | |
 |---|---|---|
 | `--provider` | `claude` | `claude` or `gemini` |
-| `--model` | `claude-opus-5-5` / `gemini-3.8-flash` | any model id the provider supports |
+| `--model` | `claude-opus-5-5` / `gemini-3.8-flash` | any model id the provider supports (see the note below) |
 | `--test-cmd` | `pytest -q` | any command; exit code 0 means pass |
 | `--max-steps` / `--max-cost` | `30` / `$1.00` | hard limits per run |
 | `--review` | off | show each diff and ask before applying it |
 | `--allow-test-edits` | off | let the agent modify test files |
 
 The exit code is `0` when the tests pass at the end, so Greenlight can be chained in scripts and CI.
+
+**Gemini free tier:** each model has its own small daily request quota (as low as 20 requests per day), and a fix takes about 5–10 requests. If you hit `429 RESOURCE_EXHAUSTED`, switch models with `--model` (for example `gemini-3.1-flash-lite`) or wait for the quota to reset. Temporary `503` overload errors are retried automatically.
 
 ## How it works
 
@@ -64,7 +81,8 @@ flowchart LR
 | [`tools.py`](src/greenlight/tools.py) | The six tools the model can call, bound to one workspace |
 | [`security.py`](src/greenlight/security.py) | Path confinement, secret-file denylist, env scrubbing, redaction |
 | [`keys.py`](src/greenlight/keys.py) | BYOK resolution: env var → OS keychain |
-| [`cli.py`](src/greenlight/cli.py) | `greenlight fix` and `greenlight auth` |
+| [`cli.py`](src/greenlight/cli.py) | `greenlight fix`, `greenlight ui` and `greenlight auth` |
+| [`streamlit_app.py`](src/greenlight/streamlit_app.py) | Web UI: live run log, diff and report; local vs. hosted mode |
 
 **Design decisions worth calling out:**
 
@@ -89,8 +107,12 @@ Greenlight runs code and reads files on your machine, and sends what it reads to
 | Prompt injection via repo contents | No arbitrary shell; the system prompt treats file contents as data; arguments to `run_tests` can't add flags |
 | Reward hacking (weakening tests) | Test files are read-only by default, and the eval marks a task failed if any test file changed |
 | Runaway spend | Hard limits on steps, tokens and estimated USD cost |
+| Web UI: a key left in the browser or server | Pasted keys are moved out of the input field the moment you press Run, used for that run, then dropped from memory (`forget_secret`). The UI never reads server-side keys |
+| Web UI: a malicious website driving your local UI (DNS rebinding) | `greenlight ui` binds to 127.0.0.1 and only accepts WebSocket connections whose Host is `localhost`/`127.0.0.1` |
+| Web UI: HTML/Markdown injection from repo content | Repo- and model-derived text is HTML-escaped and rendered with `st.html` (scripts stripped, no Markdown) or as plain text/code. Tracebacks are hidden from visitors |
+| Hosted demo: one visitor exhausting the server | At most 2 concurrent runs, 20 steps, 60s per test run, and CPU-time and file-size limits on the test process |
 
-Not covered yet: the test command itself runs unsandboxed. If you don't trust the repository's code, run Greenlight inside a container (see the roadmap).
+Not covered yet: the test command runs without a full sandbox (the limits above are not isolation). If you don't trust a repository's code, run Greenlight inside a container (see the roadmap).
 
 ## Evaluation
 
@@ -120,7 +142,7 @@ Each task runs in a temporary copy. It counts as solved only if the test command
 
 ```bash
 pip install -e ".[dev]"
-pytest -q            # 57 tests, no API key or network needed (scripted fake provider)
+pytest -q            # 68 tests, incl. headless UI tests; no API key or network needed
 ruff check . && ruff format --check .
 ```
 

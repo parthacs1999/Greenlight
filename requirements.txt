@@ -1,0 +1,3 @@
+# Used by Streamlit Community Cloud. Installs Greenlight with the UI extra
+# (pytest is included because the demo repos are tested with it).
+.[ui]

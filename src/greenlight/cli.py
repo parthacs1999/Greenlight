@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 import time
 from enum import Enum
 from pathlib import Path
@@ -196,6 +199,35 @@ def _report(result: RunResult) -> None:
     console.print(Panel(table, title="Run report", border_style=colours[result.status]))
     if result.status != "fixed":
         console.print(Panel(result.test_output[-3000:], title="Final test output"))
+
+
+@app.command()
+def ui(
+    port: Annotated[int, typer.Option(help="Port to serve on.")] = 8501,
+    open_browser: Annotated[bool, typer.Option("--open/--no-open")] = True,
+) -> None:
+    """Open the web UI on this machine (localhost only), with local folders and keys enabled."""
+    try:
+        import streamlit  # noqa: F401
+    except ImportError as exc:
+        console.print('[red]The UI needs Streamlit: pip install -e ".[ui]"[/]')
+        raise typer.Exit(2) from exc
+
+    app_path = Path(__file__).with_name("streamlit_app.py")
+    command = [
+        sys.executable, "-m", "streamlit", "run", str(app_path),
+        "--server.address", "127.0.0.1",
+        # Reject WebSocket connections with any other Host header, so a malicious site
+        # can't drive this server via DNS rebinding and use local-folder mode to run
+        # commands. (List options take one flag per value.)
+        "--server.allowedHosts", "localhost",
+        "--server.allowedHosts", "127.0.0.1",
+        "--server.port", str(port),
+        "--server.headless", "false" if open_browser else "true",
+        "--browser.gatherUsageStats", "false",
+    ]  # fmt: skip
+    env = {**os.environ, "GREENLIGHT_LOCAL": "1"}
+    raise typer.Exit(subprocess.call(command, env=env))
 
 
 @auth_app.command("set")
