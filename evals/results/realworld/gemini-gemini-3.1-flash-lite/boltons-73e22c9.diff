@@ -1,0 +1,12 @@
+--- a/boltons/statsutils.py
++++ b/boltons/statsutils.py
+@@ -465,6 +465,9 @@
+                     return 7
+         elif round(c2, precision) == 0:
+             return 3  # Gamma
++        elif round(c0, precision) == 0:
++            # If c0 is zero, the denominator (4 * c0 * c2) is zero
++            return 1  # Beta
+         else:
+             k = c1 ** 2 / (4 * c0 * c2)
+             if k < 0:

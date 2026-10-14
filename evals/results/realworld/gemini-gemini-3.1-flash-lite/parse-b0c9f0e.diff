@@ -1,0 +1,16 @@
+--- a/parse/__init__.py
++++ b/parse/__init__.py
+@@ -727,7 +727,12 @@
+             self._group_index += 1
+             conv[group] = percentage
+         elif type == "f":
+-            s = r"\d*\.\d+"
++            # If precision is explicitly 0, we can match integers too, 
++            # otherwise f expects a decimal point.
++            if format.get("precision") == "0":
++                s = r"[-+]?\d+"
++            else:
++                s = r"[-+]?\d*\.\d+"
+             conv[group] = convert_first(float)
+         elif type == "F":
+             s = r"\d*\.\d+"

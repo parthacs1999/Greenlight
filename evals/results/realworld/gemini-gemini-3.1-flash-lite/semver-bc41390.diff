@@ -1,0 +1,17 @@
+--- a/src/semver/version.py
++++ b/src/semver/version.py
+@@ -49,6 +49,14 @@
+         )
+         if not isinstance(other, comparable_types):
+             return NotImplemented
++        # Allow comparison if they are of the same type, or if they are both Versions
++        if type(self) is not type(other) and not isinstance(other, Version):
++            return NotImplemented
++        
++        # If we are a subclass and other is a base Version, this will likely fail
++        # if the subclass's compare method is strict. 
++        # But for comparison operators (__eq__, etc), it should be allowed 
++        # as long as they are both Versions.
+         return operator(self, other)
+ 
+     return wrapper

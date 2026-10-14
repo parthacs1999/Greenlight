@@ -1,0 +1,503 @@
+{
+  "description": "Real bug-fix commits from open-source projects (see common.py).",
+  "tasks": [
+    {
+      "id": "boltons-1cdc0e9",
+      "repo": "boltons",
+      "url": "https://github.com/mahmoud/boltons",
+      "fix_sha": "1cdc0e9d36f3eb32608f3b34885717697643e9b8",
+      "message": "statsutils: handle zero interquartile range in histograms (#467)",
+      "date": "2026-09-07",
+      "src_files": [
+        "boltons/statsutils.py"
+      ],
+      "test_files": [
+        "tests/test_statsutils.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_statsutils::test_histogram_zero_interquartile_range"
+      ],
+      "src_lines_changed": 2,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "boltons-4e5faa3",
+      "repo": "boltons",
+      "url": "https://github.com/mahmoud/boltons",
+      "fix_sha": "4e5faa3d7e4008d89e0d8bf1ea87b6d9a061a16d",
+      "message": "Fix spooled stream write compatibility and backwards text seeks (#513)",
+      "date": "2026-09-23",
+      "src_files": [
+        "boltons/ioutils.py"
+      ],
+      "test_files": [
+        "tests/test_ioutils.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_ioutils.TestSpooledBytesIO::test_buffer_write_rollover_uses_byte_count",
+        "tests.test_ioutils.TestSpooledBytesIO::test_buffered_writer_flush",
+        "tests.test_ioutils.TestSpooledBytesIO::test_write_returns_byte_count",
+        "tests.test_ioutils.TestSpooledStringIO::test_negative_destination_rejected_without_moving",
+        "tests.test_ioutils.TestSpooledStringIO::test_relative_backwards_seek_uses_character_position",
+        "tests.test_ioutils.TestSpooledStringIO::test_write_returns_character_count"
+      ],
+      "src_lines_changed": 37,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "boltons-73e22c9",
+      "repo": "boltons",
+      "url": "https://github.com/mahmoud/boltons",
+      "fix_sha": "73e22c90de25aaae3e6aed57f7438ffe57349339",
+      "message": "statsutils: finish Pearson zero-denominator review and regression coverage",
+      "date": "2026-09-07",
+      "src_files": [
+        "boltons/statsutils.py"
+      ],
+      "test_files": [
+        "tests/test_statsutils.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_statsutils::test_pearson_type_zero_denominator"
+      ],
+      "src_lines_changed": 4,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "cachetools-18e5930",
+      "repo": "cachetools",
+      "url": "https://github.com/tkem/cachetools",
+      "fix_sha": "18e5930ced2cf107c273b81d949dbab8ce3f48e1",
+      "message": "Fix #218: Fix and properly document @cachedmethod.cache_key handling.",
+      "date": "2026-03-08",
+      "src_files": [
+        "src/cachetools/_cachedmethod.py"
+      ],
+      "test_files": [
+        "tests/test_cachedmethod.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_cachedmethod.CacheMethodTest::test_decorator_attributes",
+        "tests.test_cachedmethod.DictMethodTest::test_decorator_attributes"
+      ],
+      "src_lines_changed": 8,
+      "src_root": "src",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "cachetools-bcf9e81",
+      "repo": "cachetools",
+      "url": "https://github.com/tkem/cachetools",
+      "fix_sha": "bcf9e8176ebe16da58751fce971c98ffe045ede1",
+      "message": "Fix #423: Detect an empty RRCache before calling choice.",
+      "date": "2026-09-27",
+      "src_files": [
+        "src/cachetools/__init__.py"
+      ],
+      "test_files": [
+        "tests/test_rr.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_rr.RRCacheTest::test_rr_popitem_empty_custom_choice"
+      ],
+      "src_lines_changed": 9,
+      "src_root": "src",
+      "test_paths": [],
+      "fails_at_fix": [
+        "tests.test_cached.NoneWrapperTest::test_decorator",
+        "tests.test_cached.NoneWrapperTest::test_decorator_attributes",
+        "tests.test_cached.NoneWrapperTest::test_decorator_clear",
+        "tests.test_cached.NoneWrapperTest::test_decorator_info"
+      ]
+    },
+    {
+      "id": "cachetools-c0fdf6a",
+      "repo": "cachetools",
+      "url": "https://github.com/tkem/cachetools",
+      "fix_sha": "c0fdf6abab38040947d6fe2e38c507401d5e2350",
+      "message": "Fix TLRUCache silently keeping stale value on expired overwrite",
+      "date": "2026-07-23",
+      "src_files": [
+        "src/cachetools/__init__.py"
+      ],
+      "test_files": [
+        "tests/test_tlru.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_tlru.TLRUCacheTest::test_overwrite_existing_with_expired"
+      ],
+      "src_lines_changed": 18,
+      "src_root": "src",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "more-itertools-67fcf64",
+      "repo": "more-itertools",
+      "url": "https://github.com/more-itertools/more-itertools",
+      "fix_sha": "67fcf640477c78605580f5ee703a54c73c1e7a8a",
+      "message": "fix: honour a falsey validator in bucket (#1308)",
+      "date": "2026-10-06",
+      "src_files": [
+        "more_itertools/more.py"
+      ],
+      "test_files": [
+        "tests/test_more.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_more.BucketTests::test_falsey_validator_is_honoured"
+      ],
+      "src_lines_changed": 5,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "more-itertools-6b1907d",
+      "repo": "more-itertools",
+      "url": "https://github.com/more-itertools/more-itertools",
+      "fix_sha": "6b1907de293a655fb77881bf81948f95fd15bd7c",
+      "message": "fix: seekable.peek/bool no longer drop items when maxlen is 0",
+      "date": "2026-09-09",
+      "src_files": [
+        "more_itertools/more.py"
+      ],
+      "test_files": [
+        "tests/test_more.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_more.SeekableTest::test_maxlen_zero_bool_does_not_drop_items",
+        "tests.test_more.SeekableTest::test_maxlen_zero_peek_does_not_drop_items"
+      ],
+      "src_lines_changed": 5,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "more-itertools-def2dab",
+      "repo": "more-itertools",
+      "url": "https://github.com/more-itertools/more-itertools",
+      "fix_sha": "def2dabea858b6ecb84ee0c52e6e07929f2c409c",
+      "message": "Fix one()/only() dropping a falsy user-supplied exception",
+      "date": "2026-09-14",
+      "src_files": [
+        "more_itertools/more.py"
+      ],
+      "test_files": [
+        "tests/test_more.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_more.OneTests::test_falsy_custom_exception",
+        "tests.test_more.OneTests::test_too_long_does_not_evaluate_repr",
+        "tests.test_more.OnlyTests::test_falsy_custom_exception",
+        "tests.test_more.OnlyTests::test_too_long_does_not_evaluate_repr"
+      ],
+      "src_lines_changed": 14,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "parse-421c199",
+      "repo": "parse",
+      "url": "https://github.com/r1chardj0n3s/parse",
+      "fix_sha": "421c19919fbca4c61ec20c2f8292d19d93eecbc8",
+      "message": "Fix handling of unused alignment (#132)",
+      "date": "2021-06-04",
+      "src_files": [
+        "parse.py"
+      ],
+      "test_files": [
+        "test_parse.py"
+      ],
+      "fail_to_pass": [
+        "test_parse.TestBugs::test_unused_centered_alignment_bug",
+        "test_parse.TestBugs::test_unused_left_alignment_bug"
+      ],
+      "src_lines_changed": 4,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "parse-b0c9f0e",
+      "repo": "parse",
+      "url": "https://github.com/r1chardj0n3s/parse",
+      "fix_sha": "b0c9f0e2f588ae2b3ce2e8b8fecc016187f045cf",
+      "message": "fix: parse zero-precision floats formatted without a decimal point",
+      "date": "2026-05-24",
+      "src_files": [
+        "parse/__init__.py"
+      ],
+      "test_files": [
+        "tests/test_parse.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_parse::test_numbers"
+      ],
+      "src_lines_changed": 5,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "parse-ba6803d",
+      "repo": "parse",
+      "url": "https://github.com/r1chardj0n3s/parse",
+      "fix_sha": "ba6803d57179a4b026c8ed51d970156653153b62",
+      "message": "Fix microsecond precision loss in timestamp parsing",
+      "date": "2026-02-18",
+      "src_files": [
+        "parse.py"
+      ],
+      "test_files": [
+        "tests/test_bugs.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_bugs::test_microsecond_precision_issue162"
+      ],
+      "src_lines_changed": 2,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "semver-37ae009",
+      "repo": "semver",
+      "url": "https://github.com/python-semver/python-semver",
+      "fix_sha": "37ae009c7cacab8f1a87157ca2b484b8e18a0a78",
+      "message": "fix: validate and match prerelease token prefixes (#489)",
+      "date": "2026-10-05",
+      "src_files": [
+        "src/semver/version.py"
+      ],
+      "test_files": [
+        "tests/test_bump.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_bump::test_next_version_matches_literal_prerelease_token_family[1.2.3-alpha.beta.1+build.7-alpha.beta-1.2.3-alpha.beta.2]",
+        "tests.test_bump::test_next_version_matches_literal_prerelease_token_family[1.2.3-alphaXbeta9-alpha.beta-1.2.3-alpha.beta.1]",
+        "tests.test_bump::test_next_version_rejects_invalid_prerelease_token[01]",
+        "tests.test_bump::test_next_version_rejects_invalid_prerelease_token[[]",
+        "tests.test_bump::test_next_version_rejects_invalid_prerelease_token[r\\xe9]",
+        "tests.test_bump::test_next_version_rejects_invalid_prerelease_token[rc+build]",
+        "tests.test_bump::test_next_version_rejects_invalid_prerelease_token[rc..next]",
+        "tests.test_bump::test_next_version_rejects_invalid_prerelease_token[rc.01]",
+        "tests.test_bump::test_next_version_rejects_invalid_prerelease_token[rc.]"
+      ],
+      "src_lines_changed": 16,
+      "src_root": "src",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "semver-8c0a3f7",
+      "repo": "semver",
+      "url": "https://github.com/python-semver/python-semver",
+      "fix_sha": "8c0a3f7d80b98962b9db2861a02a035af831b2ac",
+      "message": "Fix #484: Increment old-style prerelease with dot (#485)",
+      "date": "2026-09-24",
+      "src_files": [
+        "src/semver/version.py"
+      ],
+      "test_files": [
+        "tests/test_issue484.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_issue484::test_issue_484_custom_token",
+        "tests.test_issue484::test_issue_484_rc3_to_rc4",
+        "tests.test_issue484::test_issue_484_rc9_to_rc10"
+      ],
+      "src_lines_changed": 8,
+      "src_root": "src",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "semver-bc41390",
+      "repo": "semver",
+      "url": "https://github.com/python-semver/python-semver",
+      "fix_sha": "bc41390f388d88114e8529b17fe145c5af390cbb",
+      "message": "Fix comparison with subclasses",
+      "date": "2024-12-13",
+      "src_files": [
+        "src/semver/version.py"
+      ],
+      "test_files": [
+        "tests/test_subclass.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_subclass::test_compare_with_subclass"
+      ],
+      "src_lines_changed": 2,
+      "src_root": "src",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "sqlparse-111b35c",
+      "repo": "sqlparse",
+      "url": "https://github.com/andialbrecht/sqlparse",
+      "fix_sha": "111b35cffcfe44b16fbdd27507f165bafd52a2a1",
+      "message": "Fix function grouping skipped for lowercase 'as' in CREATE TABLE AS SELECT",
+      "date": "2026-07-22",
+      "src_files": [
+        "sqlparse/engine/grouping.py"
+      ],
+      "test_files": [
+        "tests/test_grouping.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_grouping::test_grouping_alias_ctas_lowercase_as"
+      ],
+      "src_lines_changed": 2,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "sqlparse-da67ac1",
+      "repo": "sqlparse",
+      "url": "https://github.com/andialbrecht/sqlparse",
+      "fix_sha": "da67ac16b8fa2c5041458bee728c8a914bed2d37",
+      "message": "Enhance DoS protection by raising SQLParseError for exceeded grouping limits (fixes #827).",
+      "date": "2025-12-08",
+      "src_files": [
+        "sqlparse/engine/grouping.py"
+      ],
+      "test_files": [
+        "tests/test_dos_prevention.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_dos_prevention.TestDoSPrevention::test_deeply_nested_groups_limited",
+        "tests.test_dos_prevention.TestDoSPrevention::test_large_tuple_list_performance",
+        "tests.test_dos_prevention.TestDoSPrevention::test_very_large_token_list_limited"
+      ],
+      "src_lines_changed": 17,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "sqlparse-f66d12c",
+      "repo": "sqlparse",
+      "url": "https://github.com/andialbrecht/sqlparse",
+      "fix_sha": "f66d12c245412f28c58f045b646eb53c0e691b8b",
+      "message": "Fix get_real_name for names with more than two dotted parts (#332)",
+      "date": "2026-07-25",
+      "src_files": [
+        "sqlparse/sql.py"
+      ],
+      "test_files": [
+        "tests/test_parse.py"
+      ],
+      "fail_to_pass": [
+        "tests.test_parse::test_get_real_name_multi_part_dotted"
+      ],
+      "src_lines_changed": 7,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "tabulate-3aa568c",
+      "repo": "tabulate",
+      "url": "https://github.com/astanin/python-tabulate",
+      "fix_sha": "3aa568c66987dbc97c079c6a2e4bd0ad362a949f",
+      "message": "fix #408 - remove trailing whitespace from asciidoc output",
+      "date": "2026-03-05",
+      "src_files": [
+        "tabulate/__init__.py"
+      ],
+      "test_files": [
+        "test/test_output.py",
+        "test/test_regression.py"
+      ],
+      "fail_to_pass": [
+        "test.test_output::test_asciidoc",
+        "test.test_output::test_asciidoc_headerless",
+        "test.test_regression::test_asciidoc_without_trailing_whitespace"
+      ],
+      "src_lines_changed": 11,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "tabulate-8014ec6",
+      "repo": "tabulate",
+      "url": "https://github.com/astanin/python-tabulate",
+      "fix_sha": "8014ec66820c89307005b26f878119baa5bf6932",
+      "message": "Fix alignments in `github` tables",
+      "date": "2026-03-05",
+      "src_files": [
+        "tabulate/__init__.py"
+      ],
+      "test_files": [
+        "test/test_output.py"
+      ],
+      "fail_to_pass": [
+        "test.test_output::test_github",
+        "test.test_output::test_github_multiline",
+        "test.test_output::test_github_with_colalign",
+        "test.test_output::test_simple_headerless_with_sep_line_with_padding_in_tablefmt"
+      ],
+      "src_lines_changed": 14,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "tabulate-e6a24aa",
+      "repo": "tabulate",
+      "url": "https://github.com/astanin/python-tabulate",
+      "fix_sha": "e6a24aa6e00ca8ce9a1987f28c11ca08c6f19383",
+      "message": "fix #241 - escape pipe character in github and pipe formats",
+      "date": "2026-03-05",
+      "src_files": [
+        "tabulate/__init__.py"
+      ],
+      "test_files": [
+        "test/test_regression.py"
+      ],
+      "fail_to_pass": [
+        "test.test_regression::test_github_escape_pipe_character"
+      ],
+      "src_lines_changed": 18,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": []
+    },
+    {
+      "id": "toolz-d2eba03",
+      "repo": "toolz",
+      "url": "https://github.com/pytoolz/toolz",
+      "fix_sha": "d2eba0374a452c2b18fe188b04527e22bda3548c",
+      "message": "Fix interpose([]) raising StopIteration (#635)",
+      "date": "2026-09-18",
+      "src_files": [
+        "toolz/itertoolz.py"
+      ],
+      "test_files": [
+        "toolz/tests/test_itertoolz.py"
+      ],
+      "fail_to_pass": [
+        "toolz.tests.test_itertoolz::test_interpose_empty"
+      ],
+      "src_lines_changed": 7,
+      "src_root": ".",
+      "test_paths": [],
+      "fails_at_fix": [
+        "toolz.tests.test_package::test_has_version"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+--- a/debug_float.py
++++ b/debug_float.py
+@@ -0,0 +1,2 @@
++print(int(float(".501902") * 1000000))
++print(int(float("." + "501902") * 1000000))

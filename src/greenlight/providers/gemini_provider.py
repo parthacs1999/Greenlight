@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from google import genai
@@ -9,6 +10,36 @@ from ..tools import Tool
 from .base import Provider, ProviderError, ToolCall, ToolResult, Turn, Usage
 
 DEFAULT_MODEL = "gemini-3.8-flash"
+_RETRY_IN = re.compile(r"retry in ((?:\d+h)?(?:\d+m)?\d+(?:\.\d+)?s)", re.IGNORECASE)
+
+
+def _friendly_error(exc: errors.APIError, model: str) -> str:
+    """Turn Gemini's long API errors into a short message a user can act on."""
+    message = exc.message or ""
+    if exc.code == 429:
+        wait = _RETRY_IN.search(message)
+        when = f" It resets in about {_round_wait(wait.group(1))}." if wait else ""
+        return (
+            f"Gemini API error 429: your key hit its quota for {model} (the free tier allows "
+            f"only a few requests per model per day).{when} Try a different model, or enable "
+            "billing for your key."
+        )
+    if exc.code == 503:
+        return f"Gemini API error 503: {model} is overloaded right now. Try again shortly."
+    return f"Gemini API error {exc.code}: {message}"
+
+
+def _round_wait(raw: str) -> str:
+    """'1h35m43.65s' -> '1h 35m', '42.1s' -> 'a minute'."""
+    hours = re.search(r"(\d+)h", raw)
+    minutes = re.search(r"(\d+)m", raw)
+    if hours:
+        return f"{hours.group(1)}h {minutes.group(1) if minutes else '0'}m"
+    if minutes:
+        return f"{int(minutes.group(1)) + 1} minutes"
+    return "a minute"
+
+
 _SYNTHETIC_ID = "gemini-call-"
 
 
@@ -46,7 +77,7 @@ class GeminiProvider(Provider):
                 model=self.model, contents=self.contents, config=self.config
             )
         except errors.APIError as exc:
-            raise ProviderError(f"Gemini API error {exc.code}: {exc.message}") from exc
+            raise ProviderError(_friendly_error(exc, self.model)) from exc
 
         candidate = response.candidates[0] if response.candidates else None
         if candidate is None or candidate.content is None:

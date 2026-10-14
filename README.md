@@ -13,9 +13,9 @@
 
 **▶ [Try it live in your browser](https://coding-agent-b.streamlit.app/)**: pick a broken demo project, paste your own Gemini or Claude key, and watch the agent fix it. Your key is used for that one run and never stored.
 
-![Greenlight fixing a real bug: it reads cart.py, traces the failure into pricing.py, makes a one-line fix, and verifies it with the test suite](docs/demo.gif)
+![Greenlight's web UI: pick a broken project, connect your own key, watch the agent reproduce, investigate, fix and verify the bug live](docs/ui-demo.gif)
 
-*A real, unedited run with `gemini-3.1-flash-lite`. The failing test is in `cart.py`, but the bug is in `pricing.py`. The agent follows the import, fixes the formula, and Greenlight re-runs the tests to confirm: **FIXED in 8 steps, 24 seconds**. Recorded with [vhs](https://github.com/charmbracelet/vhs) from [`docs/demo.tape`](docs/demo.tape).*
+*A real, unedited run of the web UI with `gemini-3.5-flash-lite` (shown at 1.4× speed). The failing test is in `cart.py`, but the bug is in `pricing.py`. The agent follows the import, fixes the formula, and Greenlight re-runs the tests itself: **fixed and verified, 1 failed → 4 passed, in 8 steps**. The key is typed into a password field, so it only ever shows as dots. [Watch the full-quality video (MP4)](docs/ui-demo.mp4) · recorded with Playwright by [`docs/record_ui_demo.py`](docs/record_ui_demo.py).*
 
 ## Why
 
@@ -36,6 +36,10 @@ greenlight auth set claude                # stores it in the OS keychain (input 
 cp -r evals/tasks/cross_module_discount /tmp/demo
 greenlight fix /tmp/demo --test-cmd "python -m pytest -q"
 ```
+
+![The same fix from the command line: tool calls stream as they happen, then the diff and a run report](docs/demo.gif)
+
+*The CLI on the same bug (`gemini-3.1-flash-lite`, real run, FIXED in 8 steps). Recorded with [vhs](https://github.com/charmbracelet/vhs) from [`docs/demo.tape`](docs/demo.tape).*
 
 ### Web UI
 
@@ -191,13 +195,51 @@ python evals/run_eval.py --provider gemini --tasks lru_cache split_bill
 
 Every task passed its hidden tests as well as its visible ones, and no fix was caught gaming the visible tests. The diffs are genuine root-cause fixes. For example, the agent made `reserve_many` a proper two-phase check-then-apply operation and fixed all five `config_parser` bugs ([read the diffs](evals/results/gemini-gemini-3.1-flash-lite)).
 
-**What this does and doesn't show:** the agent loop, tools and verification work reliably across different kinds of bugs, even with a small, cheap model. A small model scoring 10/10 also means these tasks are too easy to separate strong models from each other. The next step is real-world bugs from open-source repositories (SWE-bench style), where pass rates are much lower and comparing models becomes meaningful.
+**What this does and doesn't show:** the agent loop, tools and verification work reliably across different kinds of bugs, even with a small, cheap model. A small model scoring 10/10 also means these tasks are too easy to separate strong models from each other. That's why there's a second, much harder benchmark built from real bugs.
+
+## Real-world benchmark: 22 real bugs from open-source projects
+
+Synthetic tasks show the loop works. Real bugs show how well it works. [`evals/realworld/`](evals/realworld) reproduces **22 real bug-fix commits** from 8 well-tested open-source Python libraries (`more-itertools`, `cachetools`, `tabulate`, `sqlparse`, `semver`, `boltons`, `parse`, `toolz`), using SWE-bench's method:
+
+1. **Mine** ([`mine.py`](evals/realworld/mine.py)): scan each project's git history for commits whose message describes a bug fix, which change both source and tests, and whose source change is small (≤ 40 lines).
+2. **Reproduce the bug:** take the project at the fix commit and revert *only the source part* of the fix. The bug comes back, and the tests the maintainers added with the fix now fail.
+3. **Validate automatically.** A commit becomes a task only if the maintainers' new tests fail on the restored bug (**FAIL_TO_PASS**), they pass with the real fix, the test files still import (it's a bug, not a missing feature), the code is imported from the workspace, and the rest of the suite passes at the fix (**PASS_TO_PASS**). 30 candidate commits were rejected.
+4. **Score:** solved = FAIL_TO_PASS pass **and** no PASS_TO_PASS test regresses (the whole project suite is re-run, 82–768 tests per task) **and** no test file was edited.
+
+**The scorer is verified with an oracle** ([`run.py --oracle`](evals/realworld/run.py)): for all **22/22** tasks, the maintainers' real fix scores as *solved* and the untouched bug scores as *not solved*. The harness is also unit-tested offline ([`tests/test_realworld.py`](tests/test_realworld.py)).
+
+**Contamination:** 19 of the 22 fixes were committed in 2026, 10 of them within six weeks of the run. That makes it less likely, though not impossible, that a model saw these exact fixes during training.
+
+**Results** (2026-10-14, `gemini-3.1-flash-lite`, 30-step limit):
+
+| Outcome | Tasks |
+|---|---|
+| ✅ Solved (real fix, no regressions in the project's suite) | 4 |
+| ❌ Fixed the target test but broke another (regression) | 1 |
+| ⏸️ Out of steps | 8 |
+| **Pass rate** | **4 / 13 attempted (31%)** |
+| ⚠️ Not attempted: the free-tier quota ran out mid-run (`429`/`503`) | 9 |
+
+Tasks stopped by quota or overload aren't counted as failures. They aren't a verdict on the model, and `--resume` re-runs only those. Full per-task results: [`COMPARISON.md`](evals/results/realworld/COMPARISON.md) and the [saved diffs](evals/results/realworld/gemini-gemini-3.1-flash-lite).
+
+**What the results show:**
+- **Real bugs are much harder than synthetic ones:** 31% here against 100% on the synthetic suite. Most failures ran out of steps exploring large real files (`more-itertools`' main module is about 5,000 lines).
+- **Passing tests isn't the same as good code.** In `cachetools-bcf9e81` the agent's fix is correct (it adds the same empty-cache check as the maintainers') but leaves a redundant `try/raise` and a no-op `except Exception: raise`. That's why the GitHub Action opens a pull request for human review instead of merging.
+- **Model comparison is next.** The harness supports any Gemini or Claude model (`run.py --provider claude --model …`), and [`compare.py`](evals/realworld/compare.py) builds a leaderboard with cost per solved bug. Comparing models fairly needs more quota than the free tier gives.
+
+```bash
+python evals/realworld/mine.py                        # find and validate tasks (clones into ~/.cache)
+python evals/realworld/run.py --oracle                # check the scorer with the real fixes
+python evals/realworld/run.py --provider gemini --model gemini-3.1-flash-lite
+python evals/realworld/run.py --provider gemini --model gemini-3.1-flash-lite --resume
+python evals/realworld/compare.py                     # leaderboard + task-by-model grid
+```
 
 ## Development
 
 ```bash
 pip install -e ".[dev]"
-pytest -q            # 86 tests, incl. headless UI and eval-harness tests; no API key or network needed
+pytest -q            # 96 tests, incl. headless UI and benchmark-harness tests; no API key or network needed
 ruff check . && ruff format --check .
 ```
 
@@ -208,7 +250,9 @@ CI runs lint and tests on Python 3.10 to 3.13, plus a [gitleaks](https://github.
 - [ ] Docker sandbox for the test command
 - [x] GitHub Action: run on a failing CI job and open a PR with the fix
 - [x] Harder eval tasks with hidden tests and saved diffs
-- [ ] Real-world bugs from open-source repos (SWE-bench style), JS/TS projects
+- [x] Real-world benchmark: 22 real bug fixes from open-source repos (SWE-bench style)
+- [ ] Model comparison on the real-world benchmark (Claude vs Gemini, cost per solved bug)
+- [ ] JS/TS projects
 - [ ] OpenTelemetry tracing
 
 ## License

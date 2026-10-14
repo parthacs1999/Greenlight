@@ -1,0 +1,32 @@
+--- a/src/semver/version.py
++++ b/src/semver/version.py
+@@ -94,7 +94,7 @@
+     #: Regex for number in a build
+     _LAST_NUMBER: ClassVar[Pattern[str]] = re.compile(r"(?:[^\d]*(\d+)[^\d]*)+")
+     #: Regex for number in a prerelease
+-    _LAST_PRERELEASE: ClassVar[Pattern[str]] = re.compile(r"^(.*\.)?(\d+)$")
++    _LAST_PRERELEASE: ClassVar[Pattern[str]] = re.compile(r"^(.*-)?(\d+)$")
+     #: Regex for a single valid alphanumeric prerelease identifier
+     _PRERELEASE_IDENTIFIER: ClassVar[Pattern[str]] = re.compile(
+         r"0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*", re.ASCII
+@@ -300,6 +300,8 @@
+         :param string: the prerelease version to increment
+         :return: the incremented string
+         """
++        if string.isdigit():
++            return str(int(string) + 1)
+         match = Version._LAST_PRERELEASE.search(string)
+         if match:
+             next_ = str(int(match.group(2)) + 1)
+@@ -541,8 +543,9 @@
+         else:
+             if version.prerelease is not None and prerelease_token:
+                 current_token = version.prerelease.split(".")[0]
+-                if current_token != prerelease_token:
+-                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
++                if current_token == prerelease_token:
++                    return version.bump_prerelease(prerelease_token, bump_when_empty=True)
++                return version.replace(prerelease=f"{prerelease_token}.1", build=None)
+             return version.bump_prerelease(prerelease_token, bump_when_empty=True)
+ 
+     @_comparator

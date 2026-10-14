@@ -1,0 +1,16 @@
+--- a/boltons/statsutils.py
++++ b/boltons/statsutils.py
+@@ -561,9 +561,11 @@
+             # freedman algorithm for fixed-width bin selection
+             q25, q75 = self.get_quantile(0.25), self.get_quantile(0.75)
+             dx = 2 * (q75 - q25) / (len_data ** (1 / 3.0))
++            if dx == 0:
++                dx = (max_data - min_data) or 1.0
+             bin_count = max(1, int(ceil((max_data - min_data) / dx)))
+-            bins = [min_data + (dx * i) for i in range(bin_count + 1)]
+-            bins = [b for b in bins if b < max_data]
++            bins = [min_data + (dx * i) for i in range(bin_count)]
++            # bins = [b for b in bins if b < max_data]  <-- this was the removal
+         else:
+             dx = (max_data - min_data) / float(count)
+             bins = [min_data + (dx * i) for i in range(count)]

@@ -1,0 +1,21 @@
+--- a/src/cachetools/__init__.py
++++ b/src/cachetools/__init__.py
+@@ -357,10 +357,16 @@
+ 
+     def popitem(self):
+         """Remove and return a random `(key, value)` pair."""
++        if not self.__keys:
++            try:
++                raise KeyError("%s is empty" % type(self).__name__)
++            except KeyError as e:
++                # hide the traceback, as RRCache is empty
++                raise e from None
+         try:
+             key = self.__choice(self.__keys)
+-        except IndexError:
+-            raise KeyError("%s is empty" % type(self).__name__) from None
++        except Exception:
++            raise
+         else:
+             return (key, self.pop(key))
+ 

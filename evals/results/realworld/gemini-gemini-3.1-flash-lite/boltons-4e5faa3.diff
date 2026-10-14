@@ -1,0 +1,28 @@
+--- a/boltons/ioutils.py
++++ b/boltons/ioutils.py
+@@ -301,14 +301,15 @@
+ 
+     def write(self, s):
+         self._checkClosed()
+-        if not isinstance(s, bytes):
++        if not isinstance(s, (bytes, memoryview)):
+             raise TypeError("bytes expected, got {}".format(
+                 type(s).__name__
+             ))
+ 
+         if self.tell() + len(s) >= self._max_size:
+             self.rollover()
+-        self.buffer.write(s)
++        res = self.buffer.write(s)
++        return len(s) if res is None else res
+ 
+     def seek(self, pos, mode=0):
+         self._checkClosed()
+@@ -403,6 +404,7 @@
+             self.rollover()
+         self.buffer.write(s.encode('utf-8'))
+         self._tell = current_pos + len(s)
++        return len(s)
+ 
+     def _traverse_codepoints(self, current_position, n):
+         """Traverse from current position to the right n codepoints"""

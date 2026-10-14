@@ -1,0 +1,9 @@
+--- a/debug.py
++++ b/debug.py
+@@ -0,0 +1,6 @@
++import sqlparse
++p = sqlparse.parse('create table tbl1 as select coalesce(t1.col1, 0) as col1 from t1')[0]
++print(f"Token at 10: {p.tokens[10]}")
++print(f"Token type at 10: {type(p.tokens[10])}")
++print(f"Get alias: {p.tokens[10].get_alias()}")
++print(f"Tokens in Identifier: {p.tokens[10].tokens}")

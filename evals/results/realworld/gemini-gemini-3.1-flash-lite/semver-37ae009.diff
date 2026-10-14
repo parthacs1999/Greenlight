@@ -1,0 +1,11 @@
+--- a/src/semver/version.py
++++ b/src/semver/version.py
+@@ -543,7 +543,7 @@
+         else:
+             if version.prerelease and prerelease_token:
+                 # Handle old-style prereleases like "rc3" (no dot separator)
+-                match = re.match(f"^{prerelease_token}(\\d+)$", version.prerelease)
++                match = re.match(f"^{re.escape(prerelease_token)}(\\d+)$", version.prerelease)
+                 if match:
+                     num = int(match.group(1))
+                     return version.replace(

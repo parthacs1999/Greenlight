@@ -114,3 +114,22 @@ def test_gemini_function_call_round_trip():
 def test_factory_defaults():
     assert create_provider("claude", "k").model == "claude-opus-5-5"
     assert create_provider("gemini", "k", effort="high").model == "gemini-3.8-flash"
+
+
+def test_gemini_quota_error_is_short_and_actionable():
+    from google.genai import errors
+
+    from greenlight.providers.gemini_provider import _friendly_error
+
+    raw = (
+        "You exceeded your current quota, please check your plan and billing details. "
+        "* Quota exceeded for metric: generate_content_free_tier_requests, limit: 20, "
+        "model: gemini-3.8-flash Please retry in 1h35m43.653848999s."
+    )
+    exc = errors.ClientError(
+        429, {"error": {"code": 429, "message": raw, "status": "RESOURCE_EXHAUSTED"}}
+    )
+    message = _friendly_error(exc, "gemini-3.8-flash")
+    assert message.startswith("Gemini API error 429")
+    assert "1h 35m" in message and "different model" in message
+    assert len(message) < 260
