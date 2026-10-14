@@ -58,16 +58,28 @@ class ProviderInfo:
     key_url: str
     key_hint: str
     key_prefixes: tuple[str, ...]
+    # Other models to suggest, e.g. when the key's quota for one model runs out.
+    alternatives: tuple[str, ...] = ()
 
 
+# On Gemini's free tier every model has its own small daily request quota, and "lite"
+# models allow far more free requests. A fix takes ~5-10 requests, so the web UI defaults
+# to a lite model (the CLI keeps Google's recommended default).
 PROVIDERS = {
     "gemini": ProviderInfo(
         "Gemini",
         "Google",
-        "gemini-3.8-flash",
+        "gemini-3.5-flash-lite",
         "https://aistudio.google.com/apikey",
         "AIza…",
         ("AIza", "AQ."),
+        (
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lite",
+            "gemini-flash-lite-latest",
+            "gemini-3.6-flash",
+            "gemini-3.8-flash",
+        ),
     ),
     "claude": ProviderInfo(
         "Claude",
@@ -76,6 +88,7 @@ PROVIDERS = {
         "https://console.anthropic.com/settings/keys",
         "sk-ant-…",
         ("sk-ant-",),
+        ("claude-sonnet-5-5", "claude-haiku-5-5", "claude-opus-5-5"),
     ),
 }
 
@@ -650,6 +663,11 @@ def connect_model() -> dict[str, Any]:
 
     with st.expander("Advanced: model and budget"):
         model = st.text_input("Model", value=info.default_model, key=f"model_{provider}")
+        if provider == "gemini":
+            st.caption(
+                "Free tier: each Gemini model has its own small daily quota (a fix uses about "
+                "5–10 requests). Lite models allow the most free runs; if one runs out, switch model."
+            )
         cols = st.columns(2)
         max_steps = cols[0].number_input("Max steps", 1, 60 if is_local() else HOSTED_MAX_STEPS, 20)
         max_cost = cols[1].number_input("Max cost (USD)", 0.05, 10.0, 0.50, step=0.05)
@@ -714,7 +732,9 @@ def run_agent(project: dict[str, Any], model: dict[str, Any], container) -> None
         )
         result = agent.run()
         view.finish(result.duration_s)
-        st.session_state.last_report = to_report(result, project["label"])
+        st.session_state.last_report = to_report(
+            result, project["label"], model["provider"], provider.model
+        )
         with container:
             render_report(st.session_state.last_report)
     except Exception as exc:  # Streamlit's stop/rerun signals are BaseException, not caught
@@ -727,10 +747,12 @@ def run_agent(project: dict[str, Any], model: dict[str, Any], container) -> None
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
-def to_report(result: RunResult, label: str) -> dict[str, Any]:
+def to_report(result: RunResult, label: str, provider: str = "", model: str = "") -> dict[str, Any]:
     first = next((e for e in result.trace if e["type"] == "initial_tests"), None)
     return {
         "label": label,
+        "provider": provider,
+        "model": model,
         "status": result.status,
         "steps": result.steps,
         "input_tokens": result.usage.input_tokens,
@@ -744,6 +766,44 @@ def to_report(result: RunResult, label: str) -> dict[str, Any]:
         "test_output": result.test_output,
         "error": result.error,
     }
+
+
+def is_quota_error(error: str) -> bool:
+    return "429" in error or "quota" in error.lower()
+
+
+def switch_model(provider: str, model: str) -> None:
+    """Button callback: pick another model before the page re-renders."""
+    st.session_state["provider"] = provider
+    st.session_state[f"model_{provider}"] = model
+    st.session_state["_switched_to"] = model
+
+
+def quota_help(report: dict[str, Any]) -> None:
+    provider = report.get("provider") or "gemini"
+    info = PROVIDERS.get(provider)
+    if info is None:
+        return
+    others = [m for m in info.alternatives if m != report.get("model")][:4]
+    with st.container(border=True):
+        st.markdown(
+            f"**Your key's free quota for `{esc(report.get('model') or 'this model')}` is used up.** "
+            f"{info.company} sets this limit per key and per model, so other models on the same key "
+            "usually still work. Pick one, paste your key again (it was cleared for safety), and run:"
+        )
+        cols = st.columns(len(others) or 1)
+        for col, alt in zip(cols, others, strict=False):
+            col.button(
+                alt,
+                key=f"switch_{alt}",
+                on_click=switch_model,
+                args=(provider, alt),
+                width="stretch",
+            )
+        st.caption(
+            "For many more runs, enable billing on your key: a fix with a lite model costs a "
+            "fraction of a cent."
+        )
 
 
 def render_report(report: dict[str, Any]) -> None:
@@ -760,6 +820,8 @@ def render_report(report: dict[str, Any]) -> None:
         f'<div class="gl-verdict {cls}"><div class="v">{icon} {esc(title)}</div>'
         f"{before_after}{why}</div>"
     )
+    if is_quota_error(report.get("error", "")):
+        quota_help(report)
 
     cost = report["cost_usd"]
     cols = st.columns(4)
@@ -817,6 +879,12 @@ def main() -> None:
         args=(model["provider"],),
     )
     results = st.container()
+
+    if switched := st.session_state.pop("_switched_to", None):
+        results.success(
+            f"Switched to {switched}. Paste your key in step 2 and press the button again.",
+            icon="🔁",
+        )
 
     if clicked:
         # The key was moved out of the widget by capture_key; take it out of the session too.

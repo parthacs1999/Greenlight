@@ -55,6 +55,8 @@ greenlight ui            # opens http://127.0.0.1:8501
 
 Pick a buggy demo repo (or, locally, any folder), choose Claude or Gemini, and watch the agent's tool calls stream live. You get the diff, the agent's summary, and a cost report at the end.
 
+**Running out of free quota?** Gemini's free tier gives each API key a small daily quota *per model*. That's set by Google, so no app can raise it, and because visitors bring their own key, each visitor has their own. To make the most of it, the web UI defaults to a lite model (`gemini-3.5-flash-lite`), which allows far more free requests than `gemini-3.8-flash` (20 a day, about 2 fixes). If a run hits the quota, the UI says so in one sentence and offers **one-click buttons to switch to another model**, since each model's quota is separate. For unlimited use, enable billing on your Google AI key (a lite-model fix costs a fraction of a cent) or use a Claude key.
+
 The same app deploys to [Streamlit Community Cloud](https://streamlit.io/cloud) for free: point it at this repo with `streamlit_app.py` as the entry file.
 
 Everyone brings their own key, in every mode. The UI never reads keys from the server's environment or keychain. A pasted key is used for one run, is never written anywhere, is cleared from the session when the run starts, and is dropped from memory when the run ends. Hosted mode is the default and is locked down further: only the bundled demo projects can be run, each on a temporary copy, with a fixed test command. Your own folders are only available through `greenlight ui` on your machine.
@@ -72,7 +74,7 @@ Everyone brings their own key, in every mode. The UI never reads keys from the s
 
 The exit code is `0` when the tests pass at the end, so Greenlight can be chained in scripts and CI.
 
-**Gemini free tier:** each model has its own small daily request quota (as low as 20 requests per day), and a fix takes about 5–10 requests. If you hit `429 RESOURCE_EXHAUSTED`, switch models with `--model` (for example `gemini-3.1-flash-lite`) or wait for the quota to reset. Temporary `503` overload errors are retried automatically.
+**Gemini free tier:** each model has its own small daily request quota (as low as 20 requests per day), and a fix takes about 5–10 requests. If you hit `429 RESOURCE_EXHAUSTED`, Greenlight tells you which model ran out and when it resets. Switch models with `--model` (lite models like `gemini-3.5-flash-lite` allow the most free requests), wait for the reset, or enable billing on your key. Temporary `503` overload errors are retried automatically.
 
 ### GitHub Action: fix failing CI automatically
 
@@ -240,7 +242,7 @@ python evals/realworld/compare.py                     # leaderboard + task-by-mo
 
 ```bash
 pip install -e ".[dev]"
-pytest -q            # 96 tests, incl. headless UI and benchmark-harness tests; no API key or network needed
+pytest -q            # 97 tests, incl. headless UI and benchmark-harness tests; no API key or network needed
 ruff check . && ruff format --check .
 ```
 

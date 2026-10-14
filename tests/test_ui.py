@@ -115,3 +115,27 @@ def test_concurrent_run_limit(monkeypatch):
         assert not called
     finally:
         ui._RUN_SLOTS.release()
+
+
+def test_quota_error_offers_one_click_model_switch(monkeypatch):
+    from greenlight.providers.base import ProviderError
+
+    class QuotaProvider(ScriptedProvider):
+        model = "gemini-3.5-flash-lite"  # a real provider reports the model the user picked
+
+        def step(self):
+            raise ProviderError("Gemini API error 429: your key hit its quota for this model.")
+
+    monkeypatch.setattr(ui, "create_provider", lambda *a, **k: QuotaProvider([]))
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    assert at.text_input(key="model_gemini").value == "gemini-3.5-flash-lite"  # lite default
+
+    at.text_input(key="api_key_gemini").input(VISITOR_KEY)
+    at.button[0].click().run()
+    switches = [b for b in at.button if b.key and b.key.startswith("switch_")]
+    assert switches, "expected model-switch buttons after a quota error"
+    assert all(b.label != "gemini-3.5-flash-lite" for b in switches)  # not the one that failed
+
+    switches[0].click().run()
+    assert at.text_input(key="model_gemini").value == switches[0].label
+    assert any("Switched to" in s.value for s in at.success)
