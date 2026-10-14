@@ -1,11 +1,17 @@
 # Greenlight
 
+[![Try it live](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://coding-agent-b.streamlit.app/)
+[![CI](https://github.com/parthacs1999/coding-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/parthacs1999/coding-agent/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 **An AI agent that fixes failing tests.** Point it at a repository and it runs your test suite, reads the failures, finds the root cause, edits the code, and re-runs the tests until they pass. Then it checks the result itself instead of trusting the model.
 
 - **Bring your own key.** It runs on your machine with your Claude or Gemini API key. Your key goes only to the provider's API.
 - **Multi-provider.** One agent loop, with interchangeable Claude and Gemini backends.
 - **Guardrails built in.** It never touches secret files, its tests run without your credentials, test files are read-only, and it stops at a hard step, token and cost budget.
 - **Measured.** It ships with an eval suite of buggy repositories and reports pass rate, cost and steps per model.
+
+**▶ [Try it live in your browser](https://coding-agent-b.streamlit.app/)**: pick a broken demo project, paste your own Gemini or Claude key, and watch the agent fix it. Your key is used for that one run and never stored.
 
 ![Greenlight fixing a real bug: it reads cart.py, traces the failure into pricing.py, makes a one-line fix, and verifies it with the test suite](docs/demo.gif)
 
@@ -32,6 +38,10 @@ greenlight fix /tmp/demo --test-cmd "python -m pytest -q"
 ```
 
 ### Web UI
+
+**Hosted demo:** https://coding-agent-b.streamlit.app/ (on Streamlit Community Cloud's free tier, it may take ~30s to wake up).
+
+To run it yourself:
 
 ```bash
 pip install -e ".[ui]"
