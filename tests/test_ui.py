@@ -139,3 +139,38 @@ def test_quota_error_offers_one_click_model_switch(monkeypatch):
     switches[0].click().run()
     assert at.text_input(key="model_gemini").value == switches[0].label
     assert any("Switched to" in s.value for s in at.success)
+
+
+def test_replay_needs_no_key_and_makes_no_ai_calls(monkeypatch):
+    monkeypatch.setenv("GREENLIGHT_REPLAY_SPEED", "0")
+    monkeypatch.setattr(ui, "create_provider", lambda *a, **k: pytest.fail("no AI calls in replay"))
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    at.button(key="replay").click().run()
+
+    assert not at.exception
+    html = page_html(at)
+    assert "Replaying a real run" in html and "no AI calls are made" in html
+    assert "Fixed and verified" in html
+    assert any("/ 100" in c.value for c in at.code)  # the recorded diff
+    assert any("Replay of a real run recorded on" in c.value for c in at.caption)
+
+
+REPLAYS = sorted((ROOT / "src" / "greenlight" / "replays").glob("*.json"))
+
+
+def test_every_demo_project_has_a_replay():
+    assert {p.stem for p in REPLAYS} == set(ui.DEMO_TASKS)
+
+
+@pytest.mark.parametrize("path", REPLAYS, ids=lambda p: p.stem)
+def test_replay_files_are_clean_and_end_fixed(path):
+    import json
+    import re
+
+    text = path.read_text()
+    replay = json.loads(text)
+    assert replay["report"]["status"] == "fixed"
+    assert [e["type"] for e in replay["events"]][-1] == "final_tests"
+    assert replay["events"][-1]["exit_code"] == 0
+    assert not re.search(r"/private/|/var/folders|/Users/|greenlight-replay-", text)
+    assert "AIza" not in text and "sk-ant-" not in text

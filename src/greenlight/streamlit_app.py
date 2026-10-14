@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import difflib
 import html
+import json
 import os
 import re
 import shutil
@@ -319,7 +320,8 @@ def source_files(task: str) -> list[tuple[str, str]]:
 class RunView:
     """Renders agent events as a stage tracker plus a human-readable activity feed."""
 
-    def __init__(self, container) -> None:
+    def __init__(self, container, clock=None) -> None:
+        self.clock = clock  # replays pass the recorded time instead of the wall clock
         self.stage = 0
         self.failed = False
         self.steps = 0
@@ -348,7 +350,12 @@ class RunView:
                 line_cls = "done" if i < self.stage else ""
                 parts.append(f'<div class="gl-line {line_cls}"></div>')
         self.stages_ph.html(f'<div class="gl-stages">{"".join(parts)}</div>')
-        seconds = elapsed if elapsed is not None else time.monotonic() - self.started
+        if elapsed is not None:
+            seconds = elapsed
+        elif self.clock is not None:
+            seconds = self.clock()
+        else:
+            seconds = time.monotonic() - self.started
         self.stats_ph.html(
             '<div class="gl-stats">'
             f"<span>Step <b>{self.steps}</b></span>"
@@ -633,7 +640,8 @@ def connect_model() -> dict[str, Any]:
             f"⚠️ This doesn't look like a {info.label} key ({info.key_hint}). Check you pasted the right one."
         )
     st.caption(
-        f"No key yet? [Create a {info.label} API key ↗]({info.key_url}). It takes about a minute."
+        f"No key yet? [Create a {info.label} API key ↗]({info.key_url}) (about a minute), "
+        "or just **watch a recorded run** in step 3, no key needed."
     )
 
     hosted = not is_local()
@@ -747,6 +755,43 @@ def run_agent(project: dict[str, Any], model: dict[str, Any], container) -> None
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 
+REPLAY_DIR = Path(__file__).parent / "replays"
+REPLAY_MAX_PAUSE = 1.5  # cap long model "thinking" gaps so a replay stays short
+REPLAY_MIN_PAUSE = 0.35  # but keep each step readable
+
+
+def load_replay(task: str | None) -> dict[str, Any] | None:
+    path = REPLAY_DIR / f"{task}.json"
+    if not task or not path.is_file():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def play_replay(replay: dict[str, Any], label: str, container) -> None:
+    """Play a recorded real run through the same live view. No AI calls, no key."""
+    speed = float(os.environ.get("GREENLIGHT_REPLAY_SPEED", "1"))  # 0 = instant (tests)
+    recorded_t = [0.0]
+    with container:
+        st.html(
+            f'<div class="gl-h">Replaying a real run: {esc(label)}</div>'
+            f'<div class="gl-muted">Recorded on {esc(replay["recorded_at"])} with '
+            f"<code>{esc(replay['model'])}</code>. This plays back the saved run log, so no AI "
+            "calls are made and no key is needed. Long pauses are shortened.</div>"
+        )
+        view = RunView(st.container(border=True), clock=lambda: recorded_t[0])
+    for event in replay["events"]:
+        gap = event.get("t", recorded_t[0]) - recorded_t[0]
+        time.sleep(min(max(gap, REPLAY_MIN_PAUSE), REPLAY_MAX_PAUSE) * speed)
+        recorded_t[0] = event.get("t", recorded_t[0])
+        data = {k: v for k, v in event.items() if k not in ("t", "type")}
+        view.on_event(event["type"], data)
+    report = {**replay["report"], "label": label, "test_output": "", "replay": replay}
+    view.finish(report["duration_s"])
+    st.session_state.last_report = report
+    with container:
+        render_report(report)
+
+
 def to_report(result: RunResult, label: str, provider: str = "", model: str = "") -> dict[str, Any]:
     first = next((e for e in result.trace if e["type"] == "initial_tests"), None)
     return {
@@ -822,6 +867,11 @@ def render_report(report: dict[str, Any]) -> None:
     )
     if is_quota_error(report.get("error", "")):
         quota_help(report)
+    if replay := report.get("replay"):
+        st.caption(
+            f"▶ Replay of a real run recorded on {replay['recorded_at']} with {replay['model']}. "
+            "Paste your own key in step 2 to run it live."
+        )
 
     cost = report["cost_usd"]
     cols = st.columns(4)
@@ -870,13 +920,26 @@ def main() -> None:
     with right, st.container(border=True):
         model = connect_model()
 
-    step_header(3, "Run the agent", "Watch it work live. A run usually takes under a minute.")
-    clicked = st.button(
-        "🟢  Find and fix the bug",
+    step_header(
+        3,
+        "Run the agent",
+        "Run it live with your key, or watch a recorded real run without one.",
+    )
+    replay = load_replay(project["task"]) if project and project["source"] == "demo" else None
+    live_col, replay_col = st.columns([3, 2])
+    clicked = live_col.button(
+        "🟢  Find and fix the bug (live, your key)",
         type="primary",
         width="stretch",
         on_click=capture_key,
         args=(model["provider"],),
+    )
+    replay_clicked = replay_col.button(
+        "▶  Watch a recorded run (no key needed)",
+        width="stretch",
+        disabled=replay is None,
+        help=None if replay else "No recording for this project yet.",
+        key="replay",
     )
     results = st.container()
 
@@ -886,7 +949,9 @@ def main() -> None:
             icon="🔁",
         )
 
-    if clicked:
+    if replay_clicked and replay:
+        play_replay(replay, project["label"], results)
+    elif clicked:
         # The key was moved out of the widget by capture_key; take it out of the session too.
         model["api_key"] = st.session_state.pop("_run_key", "")
         provider = PROVIDERS[model["provider"]]

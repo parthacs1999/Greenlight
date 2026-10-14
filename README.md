@@ -12,7 +12,7 @@
 - **Measured honestly.** Two benchmarks: a [synthetic suite](#evaluation) with hidden tests (10/10), and a [real-world benchmark](#real-world-benchmark-22-real-bugs-from-open-source-projects) of **22 real bug fixes** from open-source libraries, built the SWE-bench way and verified with an oracle (a small model solves 31%). Every fix's diff is published.
 - **Works where teams work.** A CLI, a [web UI](https://coding-agent-b.streamlit.app/), and a [GitHub Action](#github-action-fix-failing-ci-automatically) that turns a failing CI run into a pull request for review.
 
-**▶ [Try it live in your browser](https://coding-agent-b.streamlit.app/)**: pick a broken demo project, paste your own Gemini or Claude key, and watch the agent fix it. Your key is used for that one run and never stored.
+**▶ [Try it live in your browser](https://coding-agent-b.streamlit.app/)**: pick a broken demo project and press **"Watch a recorded run"** to see the agent fix it, **no API key needed**. Or paste your own Gemini or Claude key and run it live. Your key is used for that one run and never stored.
 
 ![Greenlight's web UI: pick a broken project, connect your own key, watch the agent reproduce, investigate, fix and verify the bug live](docs/ui-demo.gif)
 
@@ -54,6 +54,8 @@ greenlight ui            # opens http://127.0.0.1:8501
 ```
 
 Pick a buggy demo repo (or, locally, any folder), choose Claude or Gemini, and watch the agent's tool calls stream live. You get the diff, the agent's summary, and a cost report at the end.
+
+**No API key? Watch a recorded run.** Every demo project has a **replay of a real run**, recorded with a real model and played back through the same live view (stage tracker, activity feed, diff, verdict) in about 10 seconds. It's clearly labelled as a replay: no AI calls are made and no key is needed, so anyone (a recruiter, say) can see the agent work without signing up for anything. Replays are recorded by [`scripts/record_replays.py`](scripts/record_replays.py), which only saves runs that end fixed. A test applies every replay's diff to a fresh copy of its project and checks it passes the **hidden** tests, so the replays show genuine fixes, not lucky ones.
 
 **Running out of free quota?** Gemini's free tier gives each API key a small daily quota *per model*. That's set by Google, so no app can raise it, and because visitors bring their own key, each visitor has their own. To make the most of it, the web UI defaults to a lite model (`gemini-3.5-flash-lite`), which allows far more free requests than `gemini-3.8-flash` (20 a day, about 2 fixes). If a run hits the quota, the UI says so in one sentence and offers **one-click buttons to switch to another model**, since each model's quota is separate. For unlimited use, enable billing on your Google AI key (a lite-model fix costs a fraction of a cent) or use a Claude key.
 
@@ -242,7 +244,7 @@ python evals/realworld/compare.py                     # leaderboard + task-by-mo
 
 ```bash
 pip install -e ".[dev]"
-pytest -q            # 97 tests, incl. headless UI and benchmark-harness tests; no API key or network needed
+pytest -q            # 119 tests, incl. headless UI and benchmark-harness tests; no API key or network needed
 ruff check . && ruff format --check .
 ```
 
