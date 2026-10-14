@@ -1,0 +1,82 @@
+{
+  "provider": "gemini",
+  "model": "gemini-3.1-flash-lite",
+  "date": "2026-10-14",
+  "solved": 5,
+  "total": 5,
+  "pass_rate": 1.0,
+  "total_cost_usd": null,
+  "avg_steps": 6.8,
+  "tasks": [
+    {
+      "task": "cross_module_discount",
+      "solved": true,
+      "status": "fixed",
+      "steps": 8,
+      "input_tokens": 13595,
+      "output_tokens": 271,
+      "cost_usd": null,
+      "duration_s": 20.2,
+      "files_changed": [
+        "pricing.py"
+      ],
+      "error": ""
+    },
+    {
+      "task": "csv_quoted_fields",
+      "solved": true,
+      "status": "fixed",
+      "steps": 6,
+      "input_tokens": 10921,
+      "output_tokens": 531,
+      "cost_usd": null,
+      "duration_s": 9.4,
+      "files_changed": [
+        "csvline.py"
+      ],
+      "error": ""
+    },
+    {
+      "task": "mutable_default",
+      "solved": true,
+      "status": "fixed",
+      "steps": 6,
+      "input_tokens": 10204,
+      "output_tokens": 302,
+      "cost_usd": null,
+      "duration_s": 34.3,
+      "files_changed": [
+        "tags.py"
+      ],
+      "error": ""
+    },
+    {
+      "task": "pagination",
+      "solved": true,
+      "status": "fixed",
+      "steps": 8,
+      "input_tokens": 14411,
+      "output_tokens": 362,
+      "cost_usd": null,
+      "duration_s": 11.3,
+      "files_changed": [
+        "paginate.py"
+      ],
+      "error": ""
+    },
+    {
+      "task": "retry_backoff",
+      "solved": true,
+      "status": "fixed",
+      "steps": 6,
+      "input_tokens": 10712,
+      "output_tokens": 311,
+      "cost_usd": null,
+      "duration_s": 43.4,
+      "files_changed": [
+        "backoff.py"
+      ],
+      "error": ""
+    }
+  ]
+}

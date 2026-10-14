@@ -133,10 +133,22 @@ python evals/run_eval.py --provider gemini
 
 Each task runs in a temporary copy. It counts as solved only if the test command passes **and** no test file was modified. Results go to `evals/results/`.
 
-| Model | Solved | Avg. steps | Total cost |
+**Results** (2026-10-14):
+
+| Model | Solved | Avg. steps | Tokens (total) | Wall time (total) | Cost |
+|---|---|---|---|---|---|
+| `gemini-3.1-flash-lite` | **5 / 5** | 6.8 | 61.6k | 119s | free tier |
+| `claude-opus-5-5` | not run yet | | | | |
+
+| Task | Solved | Steps | Time |
 |---|---|---|---|
-| `claude-opus-5-5` | _run the eval_ | | |
-| `gemini-3.8-flash` | _run the eval_ | | |
+| `cross_module_discount` | ✅ | 8 | 20s |
+| `csv_quoted_fields` | ✅ | 6 | 9s |
+| `mutable_default` | ✅ | 6 | 34s |
+| `pagination` | ✅ | 8 | 11s |
+| `retry_backoff` | ✅ | 6 | 43s |
+
+Raw results: [`evals/results/`](evals/results). These five tasks are small, single-bug repositories: a smoke-level benchmark showing the loop works end to end even with a small, cheap model, not a measure of performance on hard, real-world bugs. Harder multi-file tasks are on the roadmap.
 
 ## Development
 
