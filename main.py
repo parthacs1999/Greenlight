@@ -1,5 +1,6 @@
 import os
 import typer
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
@@ -11,6 +12,8 @@ from google.genai import types
 
 # Import our custom tools
 from tools import list_directory, read_file, write_file, run_shell_command
+
+load_dotenv()
 
 app = typer.Typer()
 console = Console()
