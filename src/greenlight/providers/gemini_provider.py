@@ -8,7 +8,7 @@ from google.genai import errors, types
 from ..tools import Tool
 from .base import Provider, ProviderError, ToolCall, ToolResult, Turn, Usage
 
-DEFAULT_MODEL = "gemini-3.5-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
 _SYNTHETIC_ID = "gemini-call-"
 
 

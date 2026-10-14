@@ -6,7 +6,7 @@ solved only if the test command passes afterwards AND no test file was changed.
 
 Usage (uses your own API key, like the CLI):
     python evals/run_eval.py --provider claude
-    python evals/run_eval.py --provider gemini --model gemini-3.5-flash --tasks pagination
+    python evals/run_eval.py --provider gemini --tasks pagination
 """
 
 from __future__ import annotations

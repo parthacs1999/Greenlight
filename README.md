@@ -34,7 +34,7 @@ Useful options:
 | Option | Default | |
 |---|---|---|
 | `--provider` | `claude` | `claude` or `gemini` |
-| `--model` | `claude-opus-5-5` / `gemini-3.5-flash` | any model id the provider supports |
+| `--model` | `claude-opus-5-5` / `gemini-3.8-flash` | any model id the provider supports |
 | `--test-cmd` | `pytest -q` | any command; exit code 0 means pass |
 | `--max-steps` / `--max-cost` | `30` / `$1.00` | hard limits per run |
 | `--review` | off | show each diff and ask before applying it |
@@ -114,7 +114,7 @@ Each task runs in a temporary copy. It counts as solved only if the test command
 | Model | Solved | Avg. steps | Total cost |
 |---|---|---|---|
 | `claude-opus-5-5` | _run the eval_ | | |
-| `gemini-3.5-flash` | _run the eval_ | | |
+| `gemini-3.8-flash` | _run the eval_ | | |
 
 ## Development
 

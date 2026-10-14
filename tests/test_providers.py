@@ -113,4 +113,4 @@ def test_gemini_function_call_round_trip():
 
 def test_factory_defaults():
     assert create_provider("claude", "k").model == "claude-opus-5-5"
-    assert create_provider("gemini", "k", effort="high").model == "gemini-3.5-flash"
+    assert create_provider("gemini", "k", effort="high").model == "gemini-3.8-flash"
