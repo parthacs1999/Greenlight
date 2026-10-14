@@ -9,7 +9,8 @@
 - **Bring your own key.** It runs on your machine with your Claude or Gemini API key. Your key goes only to the provider's API.
 - **Multi-provider.** One agent loop, with interchangeable Claude and Gemini backends.
 - **Guardrails built in.** It never touches secret files, its tests run without your credentials, test files are read-only, and it stops at a hard step, token and cost budget.
-- **Measured.** It ships with an eval suite of buggy repositories and reports pass rate, cost and steps per model.
+- **Measured honestly.** Two benchmarks: a [synthetic suite](#evaluation) with hidden tests (10/10), and a [real-world benchmark](#real-world-benchmark-22-real-bugs-from-open-source-projects) of **22 real bug fixes** from open-source libraries, built the SWE-bench way and verified with an oracle (a small model solves 31%). Every fix's diff is published.
+- **Works where teams work.** A CLI, a [web UI](https://coding-agent-b.streamlit.app/), and a [GitHub Action](#github-action-fix-failing-ci-automatically) that turns a failing CI run into a pull request for review.
 
 **▶ [Try it live in your browser](https://coding-agent-b.streamlit.app/)**: pick a broken demo project, paste your own Gemini or Claude key, and watch the agent fix it. Your key is used for that one run and never stored.
 
