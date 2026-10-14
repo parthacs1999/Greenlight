@@ -1,0 +1,12 @@
+--- a/billing.py
++++ b/billing.py
+@@ -8,5 +8,7 @@
+     if people <= 0:
+         raise ValueError("people must be positive")
+     tip = round(total_cents * tip_percent / 100)
+-    share = round((total_cents + tip) / people)
+-    return [share] * people
++    total_to_pay = total_cents + tip
++    share = total_to_pay // people
++    remainder = total_to_pay % people
++    return [share + 1] * remainder + [share] * (people - remainder)

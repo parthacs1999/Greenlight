@@ -1,0 +1,31 @@
+--- a/config.py
++++ b/config.py
+@@ -13,20 +13,23 @@
+       1-based line number, e.g. "line 3: expected key = value".
+     """
+     result = {}
+-    for number, line in enumerate(text.splitlines()):
++    for number, line in enumerate(text.splitlines(), start=1):
+         line = line.strip()
+         if not line or line.startswith("#"):
+             continue
++        if " #" in line:
++            line = line.split(" #")[0]
+         if "=" not in line:
+             raise ValueError(f"line {number}: expected key = value")
+-        key, value = line.split("=")
++        key, value = line.split("=", 1)
+         result[key.strip()] = _convert(value.strip())
+     return result
+ 
+ 
+ def _convert(value):
+     if value.lower() in ("true", "false"):
+-        return value == "true"
+-    if value.isdigit():
++        return value.lower() == "true"
++    try:
+         return int(value)
+-    return value
++    except ValueError:
++        return value

@@ -1,0 +1,27 @@
+--- a/service.py
++++ b/service.py
+@@ -20,6 +20,7 @@
+         if item.stock < qty:
+             raise OutOfStock(sku)
+         item.stock -= qty
++        self.repo.save(item)
+         return item.stock
+ 
+     def reserve_many(self, order):
+@@ -28,5 +29,15 @@
+         All-or-nothing: if any SKU lacks stock (OutOfStock) or is unknown (KeyError),
+         the error is raised and nothing at all is reserved.
+         """
++        # First, validate all items are available
++        items_to_update = {}
+         for sku, qty in order.items():
+-            self.reserve(sku, qty)
++            item = self.repo.get(sku)
++            if item.stock < qty:
++                raise OutOfStock(sku)
++            items_to_update[sku] = (item, qty)
++
++        # Then apply changes
++        for item, qty in items_to_update.values():
++            item.stock -= qty
++            self.repo.save(item)

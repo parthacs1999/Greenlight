@@ -1,0 +1,15 @@
+--- a/tags.py
++++ b/tags.py
+@@ -1,7 +1,10 @@
+ class Article:
+-    def __init__(self, title, tags=[]):
++    def __init__(self, title, tags=None):
+         self.title = title
+-        self.tags = tags
++        if tags is None:
++            self.tags = []
++        else:
++            self.tags = list(tags)
+ 
+     def add_tag(self, tag):
+         tag = tag.strip().lower()

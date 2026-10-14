@@ -2,80 +2,235 @@
   "provider": "gemini",
   "model": "gemini-3.1-flash-lite",
   "date": "2026-10-14",
-  "solved": 5,
-  "total": 5,
+  "solved": 10,
+  "total": 10,
   "pass_rate": 1.0,
+  "caught_by_hidden_tests": 0,
+  "by_difficulty": {
+    "easy": {
+      "solved": 3,
+      "total": 3
+    },
+    "medium": {
+      "solved": 2,
+      "total": 2
+    },
+    "hard": {
+      "solved": 5,
+      "total": 5
+    }
+  },
   "total_cost_usd": null,
-  "avg_steps": 6.8,
+  "avg_steps": 7.1,
   "tasks": [
     {
-      "task": "cross_module_discount",
+      "task": "pagination",
+      "difficulty": "easy",
       "solved": true,
-      "status": "fixed",
-      "steps": 8,
-      "input_tokens": 13595,
-      "output_tokens": 271,
-      "cost_usd": null,
-      "duration_s": 20.2,
-      "files_changed": [
-        "pricing.py"
-      ],
-      "error": ""
-    },
-    {
-      "task": "csv_quoted_fields",
-      "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
       "status": "fixed",
       "steps": 6,
-      "input_tokens": 10921,
-      "output_tokens": 531,
+      "input_tokens": 10002,
+      "output_tokens": 295,
       "cost_usd": null,
-      "duration_s": 9.4,
+      "duration_s": 6.7,
       "files_changed": [
-        "csvline.py"
+        "paginate.py"
       ],
+      "diff": "--- a/paginate.py\n+++ b/paginate.py\n@@ -2,6 +2,6 @@\n     \"\"\"Return the items on `page` (1-indexed) and the total number of pages.\"\"\"\n     if page < 1:\n         raise ValueError(\"page must be >= 1\")\n-    total_pages = len(items) // per_page\n-    start = page * per_page\n+    start = (page - 1) * per_page\n+    total_pages = (len(items) + per_page - 1) // per_page\n     return items[start:start + per_page], total_pages\n",
+      "summary": "The `paginate` function was incorrectly calculating the starting index of the requested page, using `page * per_page` instead of `(page - 1) * per_page`. Additionally, the total page count calculation did not correctly account for pages that were not full (i.e., it performed integer division rather than ceiling division).\n\nI corrected the logic to properly calculate the slice start index and the total number of pages.\n\nFiles changed:\n- `paginate.py`",
+      "hidden_output": "",
       "error": ""
     },
     {
       "task": "mutable_default",
+      "difficulty": "easy",
       "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
       "status": "fixed",
-      "steps": 6,
-      "input_tokens": 10204,
-      "output_tokens": 302,
+      "steps": 7,
+      "input_tokens": 12412,
+      "output_tokens": 338,
       "cost_usd": null,
-      "duration_s": 34.3,
+      "duration_s": 10.4,
       "files_changed": [
         "tags.py"
       ],
-      "error": ""
-    },
-    {
-      "task": "pagination",
-      "solved": true,
-      "status": "fixed",
-      "steps": 8,
-      "input_tokens": 14411,
-      "output_tokens": 362,
-      "cost_usd": null,
-      "duration_s": 11.3,
-      "files_changed": [
-        "paginate.py"
-      ],
+      "diff": "--- a/tags.py\n+++ b/tags.py\n@@ -1,7 +1,10 @@\n class Article:\n-    def __init__(self, title, tags=[]):\n+    def __init__(self, title, tags=None):\n         self.title = title\n-        self.tags = tags\n+        if tags is None:\n+            self.tags = []\n+        else:\n+            self.tags = list(tags)\n \n     def add_tag(self, tag):\n         tag = tag.strip().lower()\n",
+      "summary": "The root cause of the test failures was the use of a mutable default argument (`tags=[]`) in the `Article.__init__` method. In Python, this creates a shared list instance across all `Article` objects that do not explicitly provide a `tags` argument. Additionally, the original code did not create a copy of the list passed in, which led to mutation of the original list when `add_tag` was called.\n\nI fixed this by using `tags=None` as the default argument and initializing `self.tags` to an empty list inside the constructor, while also creating a shallow copy (`list(tags)`) if a list is provided by the caller.\n\nFiles changed:\n- `tags.py`",
+      "hidden_output": "",
       "error": ""
     },
     {
       "task": "retry_backoff",
+      "difficulty": "easy",
       "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
       "status": "fixed",
       "steps": 6,
-      "input_tokens": 10712,
-      "output_tokens": 311,
+      "input_tokens": 10765,
+      "output_tokens": 312,
       "cost_usd": null,
-      "duration_s": 43.4,
+      "duration_s": 57.6,
       "files_changed": [
         "backoff.py"
       ],
+      "diff": "--- a/backoff.py\n+++ b/backoff.py\n@@ -4,7 +4,11 @@\n     Returns a list of `retries` delays in seconds, each limited to `cap` if given.\n     \"\"\"\n     delays = []\n-    for attempt in range(1, retries + 1):\n-        delay = base * factor ** attempt\n+    current_delay = base\n+    for _ in range(retries):\n+        delay = current_delay\n+        if cap is not None:\n+            delay = min(delay, cap)\n         delays.append(delay)\n+        current_delay *= factor\n     return delays\n",
+      "summary": "The exponential backoff function was incorrectly calculating the sequence. It was using `base * factor ** attempt` starting with `attempt=1`, which meant the first delay was `base * factor` instead of `base`. Additionally, the cap was not being applied.\n\nI updated `backoff_delays` to maintain the current delay and update it by multiplying it by the factor in each iteration. I also added logic to apply the cap if provided.\n\nFiles changed:\n- `backoff.py`",
+      "hidden_output": "",
+      "error": ""
+    },
+    {
+      "task": "cross_module_discount",
+      "difficulty": "medium",
+      "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
+      "status": "fixed",
+      "steps": 8,
+      "input_tokens": 13592,
+      "output_tokens": 268,
+      "cost_usd": null,
+      "duration_s": 10.7,
+      "files_changed": [
+        "pricing.py"
+      ],
+      "diff": "--- a/pricing.py\n+++ b/pricing.py\n@@ -2,7 +2,7 @@\n     \"\"\"Apply a percentage discount, e.g. percent=15 means 15% off.\"\"\"\n     if not 0 <= percent <= 100:\n         raise ValueError(\"percent must be between 0 and 100\")\n-    return round(amount - amount * percent, 2)\n+    return round(amount - amount * percent / 100, 2)\n \n \n def add_tax(amount, rate=0.08):\n",
+      "summary": "The root cause of the issue was in the `apply_discount` function in `pricing.py`. It was multiplying the amount by the raw `percent` value instead of `percent / 100`, which caused the discount calculation to be incorrect (e.g., applying a 1000% discount instead of 10%).\n\nI fixed this by updating the calculation to `amount - amount * percent / 100`.\n\nFiles changed:\n- `pricing.py`",
+      "hidden_output": "",
+      "error": ""
+    },
+    {
+      "task": "csv_quoted_fields",
+      "difficulty": "medium",
+      "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
+      "status": "fixed",
+      "steps": 8,
+      "input_tokens": 15278,
+      "output_tokens": 396,
+      "cost_usd": null,
+      "duration_s": 38.7,
+      "files_changed": [
+        "csvline.py"
+      ],
+      "diff": "--- a/csvline.py\n+++ b/csvline.py\n@@ -1,7 +1,12 @@\n+import csv\n+import io\n+\n def parse_line(line, sep=\",\"):\n     \"\"\"Parse one CSV line into a list of fields.\n \n     Supports double-quoted fields, which may contain the separator, and escaped\n     quotes written as two double quotes (\"\").\n     \"\"\"\n-    return [field.strip() for field in line.rstrip(\"\\n\").split(sep)]\n+    f = io.StringIO(line.rstrip(\"\\n\"))\n+    reader = csv.reader(f, delimiter=sep)\n+    return next(reader)\n",
+      "summary": "The root cause of the failure was that the original implementation of `parse_line` used a simple string `split()` method, which does not handle quoted fields containing the separator or escaped quotes.\n\nI have replaced the implementation with Python's built-in `csv` module, which correctly handles CSV formatting rules.\n\nFiles changed:\n- `csvline.py`: Implemented `parse_line` using `csv.reader`.",
+      "hidden_output": "",
+      "error": ""
+    },
+    {
+      "task": "lru_cache",
+      "difficulty": "hard",
+      "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
+      "status": "fixed",
+      "steps": 7,
+      "input_tokens": 12473,
+      "output_tokens": 524,
+      "cost_usd": null,
+      "duration_s": 14.1,
+      "files_changed": [
+        "lru.py"
+      ],
+      "diff": "--- a/lru.py\n+++ b/lru.py\n@@ -12,10 +12,16 @@\n         self._data = {}\n \n     def get(self, key, default=None):\n-        return self._data.get(key, default)\n+        if key in self._data:\n+            value = self._data.pop(key)\n+            self._data[key] = value\n+            return value\n+        return default\n \n     def put(self, key, value):\n-        if len(self._data) >= self.capacity:\n+        if key in self._data:\n+            del self._data[key]\n+        elif len(self._data) >= self.capacity:\n             oldest = next(iter(self._data))\n             del self._data[oldest]\n         self._data[key] = value\n",
+      "summary": "The root cause of the failure was that the `LRUCache` implementation did not correctly update the order of keys when `get()` was called, failing to meet the requirement that a `get()` operation should count as a \"use\" to maintain the Least Recently Used (LRU) order. Furthermore, the `put()` operation did not handle updates to existing keys correctly, as it could unnecessarily evict an item if the key already existed.\n\nI updated the `LRUCache` class to:\n1.  In `get()`, pop and re-insert the accessed key to move it to the \"most recently used\" position (end of the dictionary).\n2.  In `put()`, correctly handle existing keys by deleting them first before re-inserting them, ensuring they are also moved to the \"most recently used\" position and preventing incorrect eviction if the cache is at capacity.\n\nFiles changed: `lru.py`",
+      "hidden_output": "",
+      "error": ""
+    },
+    {
+      "task": "interval_merge",
+      "difficulty": "hard",
+      "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
+      "status": "fixed",
+      "steps": 6,
+      "input_tokens": 9901,
+      "output_tokens": 396,
+      "cost_usd": null,
+      "duration_s": 49.6,
+      "files_changed": [
+        "intervals.py"
+      ],
+      "diff": "--- a/intervals.py\n+++ b/intervals.py\n@@ -5,9 +5,11 @@\n     [start, end] lists sorted by start. Intervals that merely touch, like [1, 3] and\n     [3, 5], are merged into [1, 5].\n     \"\"\"\n+    # Sort intervals by start time first\n+    intervals = sorted(intervals, key=lambda x: x[0])\n     merged = []\n     for start, end in intervals:\n-        if merged and start < merged[-1][1]:\n+        if merged and start <= merged[-1][1]:\n             merged[-1][1] = max(merged[-1][1], end)\n         else:\n             merged.append([start, end])\n",
+      "summary": "The issue was twofold:\n1. The `merge_intervals` function did not sort the input intervals, causing it to fail on unsorted input.\n2. The overlap check `start < merged[-1][1]` was too restrictive, as it did not account for intervals that \"touch\" (e.g., `[1, 3]` and `[3, 5]`), which should be merged according to the requirements.\n\nI fixed this by sorting the intervals by their start time and changing the condition to `start <= merged[-1][1]` to correctly identify and merge touching or overlapping intervals.\n\nFiles changed:\n- `intervals.py`",
+      "hidden_output": "",
+      "error": ""
+    },
+    {
+      "task": "inventory_service",
+      "difficulty": "hard",
+      "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
+      "status": "fixed",
+      "steps": 9,
+      "input_tokens": 18223,
+      "output_tokens": 688,
+      "cost_usd": null,
+      "duration_s": 25.2,
+      "files_changed": [
+        "service.py"
+      ],
+      "diff": "--- a/service.py\n+++ b/service.py\n@@ -20,6 +20,7 @@\n         if item.stock < qty:\n             raise OutOfStock(sku)\n         item.stock -= qty\n+        self.repo.save(item)\n         return item.stock\n \n     def reserve_many(self, order):\n@@ -28,5 +29,15 @@\n         All-or-nothing: if any SKU lacks stock (OutOfStock) or is unknown (KeyError),\n         the error is raised and nothing at all is reserved.\n         \"\"\"\n+        # First, validate all items are available\n+        items_to_update = {}\n         for sku, qty in order.items():\n-            self.reserve(sku, qty)\n+            item = self.repo.get(sku)\n+            if item.stock < qty:\n+                raise OutOfStock(sku)\n+            items_to_update[sku] = (item, qty)\n+\n+        # Then apply changes\n+        for item, qty in items_to_update.values():\n+            item.stock -= qty\n+            self.repo.save(item)\n",
+      "summary": "The root cause of the issue was that `InventoryService.reserve` did not persist changes to the repository after updating the item's stock. Since the `InMemoryRepository` returns a copy of the item, modifying the returned object did not affect the data stored in the repository.\n\nAdditionally, `InventoryService.reserve_many` was calling `self.reserve` in a loop. Because `reserve` modifies the repository directly, if one of the SKUs in `reserve_many` failed (e.g., due to `OutOfStock`), the previous successful reservations in the same `reserve_many` call had already been committed to the repository, violating the \"all-or-nothing\" requirement.\n\nI fixed these issues by:\n1. Updating `InventoryService.reserve` to save the modified item back to the repository.\n2. Refactoring `InventoryService.reserve_many` to perform all necessary checks before applying any changes to the repository, ensuring atomicity.\n\nFiles changed:\n- `service.py`",
+      "hidden_output": "",
+      "error": ""
+    },
+    {
+      "task": "split_bill",
+      "difficulty": "hard",
+      "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
+      "status": "fixed",
+      "steps": 7,
+      "input_tokens": 12327,
+      "output_tokens": 345,
+      "cost_usd": null,
+      "duration_s": 29.7,
+      "files_changed": [
+        "billing.py"
+      ],
+      "diff": "--- a/billing.py\n+++ b/billing.py\n@@ -8,5 +8,7 @@\n     if people <= 0:\n         raise ValueError(\"people must be positive\")\n     tip = round(total_cents * tip_percent / 100)\n-    share = round((total_cents + tip) / people)\n-    return [share] * people\n+    total_to_pay = total_cents + tip\n+    share = total_to_pay // people\n+    remainder = total_to_pay % people\n+    return [share + 1] * remainder + [share] * (people - remainder)\n",
+      "summary": "The root cause of the issue was that `split_bill` was incorrectly calculating an equal share for everyone using `round()`, rather than accounting for the remainder when the total cannot be divided evenly among the number of people.\n\nI updated `split_bill` in `billing.py` to correctly calculate the base share using floor division (`//`) and then distribute the remainder by adding one cent to the first `remainder` people, ensuring the total matches and the difference between shares is at most one cent.\n\nFiles changed:\n- `billing.py`",
+      "hidden_output": "",
+      "error": ""
+    },
+    {
+      "task": "config_parser",
+      "difficulty": "hard",
+      "solved": true,
+      "visible_passed": true,
+      "hidden_passed": true,
+      "tests_touched": [],
+      "status": "fixed",
+      "steps": 7,
+      "input_tokens": 18416,
+      "output_tokens": 654,
+      "cost_usd": null,
+      "duration_s": 21.0,
+      "files_changed": [
+        "config.py"
+      ],
+      "diff": "--- a/config.py\n+++ b/config.py\n@@ -13,20 +13,23 @@\n       1-based line number, e.g. \"line 3: expected key = value\".\n     \"\"\"\n     result = {}\n-    for number, line in enumerate(text.splitlines()):\n+    for number, line in enumerate(text.splitlines(), start=1):\n         line = line.strip()\n         if not line or line.startswith(\"#\"):\n             continue\n+        if \" #\" in line:\n+            line = line.split(\" #\")[0]\n         if \"=\" not in line:\n             raise ValueError(f\"line {number}: expected key = value\")\n-        key, value = line.split(\"=\")\n+        key, value = line.split(\"=\", 1)\n         result[key.strip()] = _convert(value.strip())\n     return result\n \n \n def _convert(value):\n     if value.lower() in (\"true\", \"false\"):\n-        return value == \"true\"\n-    if value.isdigit():\n+        return value.lower() == \"true\"\n+    try:\n         return int(value)\n-    return value\n+    except ValueError:\n+        return value\n",
+      "summary": "The root cause was multifold:\n1. The line number used in the `ValueError` was 0-indexed, while the requirement specified 1-based.\n2. `line.split(\"=\")` did not respect the \"first '=' only\" rule and would fail on multiple equals signs.\n3. Inline comments were not handled, causing comments to be included in values.\n4. `_convert` did not handle negative integers (using `.isdigit()` failed for `-3`).\n5. Boolean conversion was case-sensitive in a way that didn't fully match the \"true/false in any letter case\" rule.\n\nI fixed these by:\n1. Updating `enumerate` to `start=1`.\n2. Handling inline comments before parsing.\n3. Using `line.split(\"=\", 1)` to correctly separate keys and values.\n4. Improving `_convert` to use a `try-except` block for `int()` conversion to correctly handle all integers, and `value.lower() == \"true\"` for booleans.\n\nFiles changed:\n- `config.py`",
+      "hidden_output": "",
       "error": ""
     }
   ]

@@ -33,7 +33,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-extend-exclude = ["evals/tasks"]
+extend-exclude = ["evals/tasks", "evals/hidden"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]

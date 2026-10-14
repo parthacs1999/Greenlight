@@ -103,6 +103,20 @@ DEMO_TASKS = {
     "retry_backoff": DemoTask(
         "Retry backoff", "⏱️", "Retry delays are too long and ignore the cap.", "Medium"
     ),
+    "lru_cache": DemoTask("LRU cache", "🗃️", "The cache evicts the wrong entries.", "Hard"),
+    "interval_merge": DemoTask(
+        "Calendar merge", "📅", "Overlapping time ranges aren't merged correctly.", "Hard"
+    ),
+    "inventory_service": DemoTask(
+        "Inventory service",
+        "📦",
+        "Reserved stock is lost, and failed orders half-apply.",
+        "Hard · 3 files",
+    ),
+    "split_bill": DemoTask("Bill splitter", "🧾", "Split bills don't add up to the total.", "Hard"),
+    "config_parser": DemoTask(
+        "Config parser", "⚙️", "Several settings are read with the wrong values.", "Hard · 5 bugs"
+    ),
 }
 
 STAGES = ("Reproduce", "Investigate", "Fix", "Verify")

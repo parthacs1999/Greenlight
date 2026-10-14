@@ -126,45 +126,49 @@ Not covered yet: the test command runs without a full sandbox (the limits above 
 
 ## Evaluation
 
-[`evals/tasks/`](evals/tasks) contains small repositories, each with one realistic planted bug:
+[`evals/tasks/`](evals/tasks) contains 10 small repositories with realistic planted bugs, from easy to hard:
 
-| Task | Bug |
-|---|---|
-| `pagination` | Off-by-one page offset and floor instead of ceil for the page count |
-| `mutable_default` | Shared mutable default argument |
-| `csv_quoted_fields` | Naive `split(",")` ignores quoted fields and escaped quotes |
-| `cross_module_discount` | The test fails in `cart.py`; the bug is in `pricing.py` (percent vs. fraction) |
-| `retry_backoff` | Exponent off by one and the cap is ignored |
+| Task | Difficulty | What makes it tricky |
+|---|---|---|
+| `pagination` | easy | Off-by-one page offset; floor instead of ceil for the page count |
+| `mutable_default` | easy | Shared mutable default argument |
+| `retry_backoff` | easy | Exponent off by one; the cap is ignored |
+| `cross_module_discount` | medium | The test fails in `cart.py`, but the bug is in `pricing.py` |
+| `csv_quoted_fields` | medium | Naive `split(",")` ignores quoted fields and escaped quotes |
+| `lru_cache` | hard | Two recency bugs; hidden tests check the exact eviction order |
+| `interval_merge` | hard | Missing sort, an off-by-one boundary, and the input must not be mutated |
+| `inventory_service` | hard | 3 files: a lost update across layers, plus a batch operation that isn't all-or-nothing |
+| `split_bill` | hard | Cents must add up exactly; property-based hidden tests |
+| `config_parser` | hard | Five separate bugs in one function |
 
 ```bash
 python evals/run_eval.py --provider claude
-python evals/run_eval.py --provider gemini
+python evals/run_eval.py --provider gemini --tasks lru_cache split_bill
 ```
 
-Each task runs in a temporary copy. It counts as solved only if the test command passes **and** no test file was modified. Results go to `evals/results/`.
+**How tasks are scored (built to resist gaming):**
+
+- Each task runs in a temporary copy, and the agent only sees the task's own tests.
+- A task counts as solved only if **(1)** the visible tests pass when Greenlight re-runs them, **(2)** no test file was modified, and **(3)** the task's **hidden tests** in [`evals/hidden/`](evals/hidden) also pass. Hidden tests are copied in only after the agent has finished, as in SWE-bench. They test the documented behaviour on new inputs, so hard-coding the visible test values or patching only the visible symptom fails.
+- The harness itself is tested: [`tests/test_eval.py`](tests/test_eval.py) checks that a real fix scores as solved and that a fix hard-coding the visible test values is caught. Each task was also validated against reference and "cheating" fixes before being added.
+- **Every fix's diff is saved** in [`evals/results/<model>/`](evals/results), so you can read exactly what the agent changed.
 
 **Results** (2026-10-14):
 
-| Model | Solved | Avg. steps | Tokens (total) | Wall time (total) | Cost |
-|---|---|---|---|---|---|
-| `gemini-3.1-flash-lite` | **5 / 5** | 6.8 | 61.6k | 119s | free tier |
-| `claude-opus-5-5` | not run yet | | | | |
+| Model | Solved | Easy | Medium | Hard | Avg. steps | Tokens | Wall time | Cost |
+|---|---|---|---|---|---|---|---|---|
+| `gemini-3.1-flash-lite` | **10 / 10** | 3/3 | 2/2 | 5/5 | 7.1 | 138k | 264s | free tier |
+| `claude-opus-5-5` | not run yet | | | | | | | |
 
-| Task | Solved | Steps | Time |
-|---|---|---|---|
-| `cross_module_discount` | ✅ | 8 | 20s |
-| `csv_quoted_fields` | ✅ | 6 | 9s |
-| `mutable_default` | ✅ | 6 | 34s |
-| `pagination` | ✅ | 8 | 11s |
-| `retry_backoff` | ✅ | 6 | 43s |
+Every task passed its hidden tests as well as its visible ones, and no fix was caught gaming the visible tests. The diffs are genuine root-cause fixes. For example, the agent made `reserve_many` a proper two-phase check-then-apply operation and fixed all five `config_parser` bugs ([read the diffs](evals/results/gemini-gemini-3.1-flash-lite)).
 
-Raw results: [`evals/results/`](evals/results). These five tasks are small, single-bug repositories: a smoke-level benchmark showing the loop works end to end even with a small, cheap model, not a measure of performance on hard, real-world bugs. Harder multi-file tasks are on the roadmap.
+**What this does and doesn't show:** the agent loop, tools and verification work reliably across different kinds of bugs, even with a small, cheap model. A small model scoring 10/10 also means these tasks are too easy to separate strong models from each other. The next step is real-world bugs from open-source repositories (SWE-bench style), where pass rates are much lower and comparing models becomes meaningful.
 
 ## Development
 
 ```bash
 pip install -e ".[dev]"
-pytest -q            # 68 tests, incl. headless UI tests; no API key or network needed
+pytest -q            # 82 tests, incl. headless UI and eval-harness tests; no API key or network needed
 ruff check . && ruff format --check .
 ```
 
@@ -174,7 +178,8 @@ CI runs lint and tests on Python 3.10 to 3.13, plus a [gitleaks](https://github.
 
 - [ ] Docker sandbox for the test command
 - [ ] GitHub Action: run on a failing CI job and open a PR with the fix
-- [ ] More eval tasks (multi-file refactors, dependency upgrades, JS/TS projects)
+- [x] Harder eval tasks with hidden tests and saved diffs
+- [ ] Real-world bugs from open-source repos (SWE-bench style), JS/TS projects
 - [ ] OpenTelemetry tracing
 
 ## License

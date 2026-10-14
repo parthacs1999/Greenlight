@@ -37,6 +37,6 @@ Pass the test command with an absolute interpreter path. It runs with `cwd` set 
 
 - Tests use `ScriptedProvider` (`tests/conftest.py`) for the agent and fake SDK clients (`tests/test_providers.py`) for the adapters. Never make real API calls in tests.
 - Test subprocesses run with `PYTHONDONTWRITEBYTECODE=1`, because stale `.pyc` files otherwise hide same-second edits.
-- `evals/tasks/*` are intentionally buggy repos. Don't fix them, and ruff excludes them. `run_eval.py` copies each one to a temp dir.
+- `evals/tasks/*` are intentionally buggy repos. Don't fix them, and ruff excludes them. `run_eval.py` copies each one to a temp dir. `evals/hidden/<task>/` holds held-out tests that are copied in only after the agent finishes. They must never sit inside `evals/tasks/`, or the agent (and the web UI demo) would see them. A new task needs: a buggy repo with visible tests, hidden tests, and a `TASKS` entry in `run_eval.py` (plus a `DEMO_TASKS` entry in `streamlit_app.py` for the UI). Before adding it, check that the buggy version fails, a reference fix passes visible + hidden, and a hard-coded fix is caught by the hidden tests.
 - Model IDs and prices live in `pricing.py` and the provider `DEFAULT_MODEL` constants.
 - `.env` and `k.txt` hold real secrets. Don't read them.
