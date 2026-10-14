@@ -1,0 +1,64 @@
+# Copy to .github/workflows/greenlight.yml in YOUR repository.
+#
+# When your "CI" workflow fails on a branch in this repository, Greenlight tries to fix
+# the failing tests and opens a pull request with the fix for a human to review.
+#
+# Setup:
+#   1. Add your key as a repository secret: Settings > Secrets and variables > Actions >
+#      New repository secret, named GEMINI_API_KEY (or ANTHROPIC_API_KEY for Claude).
+#   2. Settings > Actions > General > "Allow GitHub Actions to create and approve pull
+#      requests" must be enabled.
+#   3. Change `workflows: ["CI"]` below to the name of your test workflow.
+
+name: Greenlight auto-fix
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  fix:
+    # Only failed runs on branches of THIS repository. workflow_run jobs have access to
+    # secrets, so never run on code from forks: that would hand your key to strangers.
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      !startsWith(github.event.workflow_run.head_branch, 'greenlight/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project dependencies
+        run: pip install -r requirements.txt pytest   # adjust for your project
+
+      - name: Greenlight
+        id: greenlight
+        uses: parthacs1999/coding-agent@main
+        with:
+          api-key: ${{ secrets.GEMINI_API_KEY }}
+          provider: gemini
+          test-command: python -m pytest -q
+          max-steps: "25"
+
+      - name: Open a pull request with the fix
+        if: steps.greenlight.outputs.fixed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: greenlight/fix-${{ github.event.workflow_run.head_branch }}
+          base: ${{ github.event.workflow_run.head_branch }}
+          title: "Greenlight: fix failing tests on ${{ github.event.workflow_run.head_branch }}"
+          body-path: ${{ steps.greenlight.outputs.body-path }}
+          commit-message: "Fix failing tests (Greenlight)"
+          labels: greenlight

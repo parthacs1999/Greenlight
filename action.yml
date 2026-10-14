@@ -1,0 +1,84 @@
+name: Greenlight
+description: AI agent that fixes failing tests. Bring your own Claude or Gemini key; pair it with a PR step for human review.
+author: parthacs1999
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  api-key:
+    description: Your Claude or Gemini API key. Pass it from a secret, e.g. secrets.GEMINI_API_KEY.
+    required: true
+  provider:
+    description: claude or gemini
+    default: gemini
+  model:
+    description: Model id (empty = Greenlight's default for the provider)
+    default: ""
+  test-command:
+    description: Command that runs the tests (exit code 0 = pass)
+    default: python -m pytest -q
+  working-directory:
+    description: Folder of the project to fix
+    default: .
+  max-steps:
+    description: Maximum model turns
+    default: "20"
+  max-cost:
+    description: Stop once the estimated cost (USD) reaches this
+    default: "1.00"
+
+outputs:
+  status:
+    description: fixed, already_passing, not_fixed, budget_exceeded or error
+    value: ${{ steps.report.outputs.status }}
+  fixed:
+    description: '"true" if the tests pass after Greenlight ran'
+    value: ${{ steps.report.outputs.fixed }}
+  steps:
+    description: Number of model turns used
+    value: ${{ steps.report.outputs.steps }}
+  body-path:
+    description: Markdown file with the explanation and diff, for a pull-request body
+    value: ${{ steps.report.outputs.body-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Greenlight
+      shell: bash
+      run: python -m pip install --quiet --disable-pip-version-check "$GITHUB_ACTION_PATH"
+
+    - name: Run Greenlight
+      id: fix
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      # Inputs go through env vars, never interpolated into the script (prevents injection).
+      env:
+        GL_KEY: ${{ inputs.api-key }}
+        GL_PROVIDER: ${{ inputs.provider }}
+        GL_MODEL: ${{ inputs.model }}
+        GL_TEST_CMD: ${{ inputs.test-command }}
+        GL_MAX_STEPS: ${{ inputs.max-steps }}
+        GL_MAX_COST: ${{ inputs.max-cost }}
+      run: |
+        case "$GL_PROVIDER" in
+          claude) export ANTHROPIC_API_KEY="$GL_KEY" ;;
+          gemini) export GEMINI_API_KEY="$GL_KEY" ;;
+          *) echo "::error::provider must be claude or gemini"; exit 1 ;;
+        esac
+        unset GL_KEY
+        args=(fix . --provider "$GL_PROVIDER" --test-cmd "$GL_TEST_CMD"
+              --max-steps "$GL_MAX_STEPS" --max-cost "$GL_MAX_COST")
+        if [ -n "$GL_MODEL" ]; then args+=(--model "$GL_MODEL"); fi
+        set +e
+        COLUMNS=120 greenlight "${args[@]}"
+        echo "exit-code=$?" >> "$GITHUB_OUTPUT"
+
+    - name: Report
+      id: report
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GL_EXIT: ${{ steps.fix.outputs.exit-code }}
+      run: python -m greenlight.github_report . "${GL_EXIT:-1}"

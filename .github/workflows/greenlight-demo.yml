@@ -1,0 +1,77 @@
+# Manually-triggered demo of the Greenlight GitHub Action on a bundled buggy project.
+# Actions > "Greenlight demo" > Run workflow. Needs a GEMINI_API_KEY repository secret.
+# The result (explanation + diff) appears in the run's summary page; nothing is committed.
+
+name: Greenlight demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Demo project to fix
+        type: choice
+        default: cross_module_discount
+        options:
+          - cross_module_discount
+          - pagination
+          - mutable_default
+          - csv_quoted_fields
+          - retry_backoff
+          - lru_cache
+          - interval_merge
+          - inventory_service
+          - split_bill
+          - config_parser
+      model:
+        description: Gemini model
+        default: gemini-3.1-flash-lite
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check the API key secret
+        env:
+          HAS_KEY: ${{ secrets.GEMINI_API_KEY != '' }}
+        run: |
+          if [ "$HAS_KEY" != "true" ]; then
+            echo "::error::Add a GEMINI_API_KEY repository secret first (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+
+      - name: Copy the buggy project
+        env:
+          TASK: ${{ inputs.task }}
+        run: |
+          pip install --quiet pytest
+          cp -r "evals/tasks/$TASK" demo-project
+          echo "Tests before Greenlight:"
+          (cd demo-project && python -m pytest -q) || true
+
+      - name: Greenlight
+        id: greenlight
+        uses: ./
+        with:
+          api-key: ${{ secrets.GEMINI_API_KEY }}
+          provider: gemini
+          model: ${{ inputs.model }}
+          working-directory: demo-project
+          test-command: python -m pytest -q
+
+      - name: Result
+        env:
+          STATUS: ${{ steps.greenlight.outputs.status }}
+          STEPS: ${{ steps.greenlight.outputs.steps }}
+        run: |
+          echo "Greenlight finished: $STATUS in $STEPS steps (details in the run summary)."
+          [ "$STATUS" = "fixed" ]

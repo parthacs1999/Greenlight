@@ -69,6 +69,34 @@ The exit code is `0` when the tests pass at the end, so Greenlight can be chaine
 
 **Gemini free tier:** each model has its own small daily request quota (as low as 20 requests per day), and a fix takes about 5–10 requests. If you hit `429 RESOURCE_EXHAUSTED`, switch models with `--model` (for example `gemini-3.1-flash-lite`) or wait for the quota to reset. Temporary `503` overload errors are retried automatically.
 
+### GitHub Action: fix failing CI automatically
+
+When your CI fails, Greenlight can try a fix and open a pull request for a human to review:
+
+```yaml
+- uses: parthacs1999/coding-agent@main
+  id: greenlight
+  with:
+    api-key: ${{ secrets.GEMINI_API_KEY }}   # your own key, from a repository secret
+    provider: gemini                         # or claude
+    test-command: python -m pytest -q
+
+- uses: peter-evans/create-pull-request@v7
+  if: steps.greenlight.outputs.fixed == 'true'
+  with:
+    body-path: ${{ steps.greenlight.outputs.body-path }}   # explanation + diff
+```
+
+A complete, copy-paste workflow is in [`examples/greenlight-on-ci-failure.yml`](examples/greenlight-on-ci-failure.yml). It runs when your CI workflow fails and opens a PR on a `greenlight/…` branch. The run summary shows the agent's explanation, the diff, tokens and time. Outputs: `status`, `fixed`, `steps`, `body-path`.
+
+Built for safety in CI:
+- **Fork code never gets your key.** The example only runs for branches in your own repository. `workflow_run` jobs can read secrets, and running them on fork code is a classic way to leak them.
+- **No script injection.** Action inputs are passed through environment variables, never pasted into shell scripts.
+- **Your key is masked by GitHub** and stripped from the test process's environment by Greenlight.
+- **It suggests, it doesn't merge.** A pull request is opened for human review, and passing tests are necessary but not sufficient.
+
+To try it on this repo: add a `GEMINI_API_KEY` secret, then run **Actions → Greenlight demo → Run workflow** and pick a buggy project ([workflow](.github/workflows/greenlight-demo.yml)).
+
 ## How it works
 
 ```mermaid
@@ -92,6 +120,7 @@ flowchart LR
 | [`security.py`](src/greenlight/security.py) | Path confinement, secret-file denylist, env scrubbing, redaction |
 | [`keys.py`](src/greenlight/keys.py) | BYOK resolution: env var → OS keychain |
 | [`cli.py`](src/greenlight/cli.py) | `greenlight fix`, `greenlight ui` and `greenlight auth` |
+| [`action.yml`](action.yml), [`github_report.py`](src/greenlight/github_report.py) | GitHub Action: run on CI failure, write a job summary and a PR body |
 | [`streamlit_app.py`](src/greenlight/streamlit_app.py) | Web UI: live run log, diff and report; local vs. hosted mode |
 
 **Design decisions worth calling out:**
@@ -168,7 +197,7 @@ Every task passed its hidden tests as well as its visible ones, and no fix was c
 
 ```bash
 pip install -e ".[dev]"
-pytest -q            # 82 tests, incl. headless UI and eval-harness tests; no API key or network needed
+pytest -q            # 86 tests, incl. headless UI and eval-harness tests; no API key or network needed
 ruff check . && ruff format --check .
 ```
 
@@ -177,7 +206,7 @@ CI runs lint and tests on Python 3.10 to 3.13, plus a [gitleaks](https://github.
 ## Roadmap
 
 - [ ] Docker sandbox for the test command
-- [ ] GitHub Action: run on a failing CI job and open a PR with the fix
+- [x] GitHub Action: run on a failing CI job and open a PR with the fix
 - [x] Harder eval tasks with hidden tests and saved diffs
 - [ ] Real-world bugs from open-source repos (SWE-bench style), JS/TS projects
 - [ ] OpenTelemetry tracing
