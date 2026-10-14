@@ -1,0 +1,3 @@
+# Fake API key used as a test fixture in tests/test_ui.py (not a real secret).
+# Only this exact historical finding is ignored; anything new is still reported.
+8412dd0e7bbc2678fc8f29fccaddf3f65ca9bc84:tests/test_ui.py:generic-api-key:16
