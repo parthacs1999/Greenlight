@@ -219,3 +219,6 @@ __marimo__/
 
 # Local secrets
 k.txt
+
+# Greenlight run traces
+.greenlight/
